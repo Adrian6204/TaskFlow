@@ -35,15 +35,6 @@ This application is designed to run in a web-based development environment where
 
 Simply open the `index.html` file in a compatible browser or development environment. The application will mount and be ready to use.
 
-### Login Credentials
-
-You can use the following mock accounts to test the application:
-
-| Username | Password  | Role  |
-| :------- | :-------- | :---- |
-| `alice`  | `password`| Admin |
-| `bob`    | `password`| User  |
-
 ## 📂 Project Structure
 
 ```
