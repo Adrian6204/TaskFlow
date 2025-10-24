@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Task, Employee, TaskStatus, Priority } from '../types';
 import { PencilIcon } from './icons/PencilIcon';
 import { TrashIcon } from './icons/TrashIcon';
-import { FlagIcon } from './icons/FlagIcon';
 import { ChatBubbleIcon } from './icons/ChatBubbleIcon';
 
 interface TaskCardProps {
@@ -14,15 +13,16 @@ interface TaskCardProps {
   onViewTask: (task: Task) => void;
 }
 
-const priorityConfig = {
-    [Priority.URGENT]: 'text-red-500',
-    [Priority.HIGH]: 'text-amber-500',
-    [Priority.MEDIUM]: 'text-sky-500',
-    [Priority.LOW]: 'text-slate-400',
+const priorityPillConfig = {
+    [Priority.URGENT]: { text: 'text-red-700 dark:text-red-300', bg: 'bg-red-100 dark:bg-red-900/50' },
+    [Priority.HIGH]: { text: 'text-orange-700 dark:text-orange-300', bg: 'bg-orange-100 dark:bg-orange-900/50' },
+    [Priority.MEDIUM]: { text: 'text-indigo-700 dark:text-indigo-300', bg: 'bg-indigo-100 dark:bg-indigo-900/50' },
+    [Priority.LOW]: { text: 'text-slate-600 dark:text-slate-300', bg: 'bg-slate-200 dark:bg-slate-700' },
 };
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, employee, onEditTask, onDeleteTask, onUpdateTaskStatus, onViewTask }) => {
   const isOverdue = new Date(task.dueDate) < new Date() && task.status !== TaskStatus.DONE;
+  const [isDragging, setIsDragging] = useState(false);
   
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation(); // Prevent card click event
@@ -39,19 +39,33 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, employee, onEditTask, onDelet
     onDeleteTask?.(task.id);
   };
 
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    e.dataTransfer.setData('application/json', JSON.stringify(task));
+    setTimeout(() => {
+        setIsDragging(true);
+    }, 0);
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
   return (
     <div 
         onClick={() => onViewTask(task)}
-        className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm hover:shadow-md border border-slate-200 dark:border-slate-700 transition-all duration-200 cursor-pointer group"
+        draggable
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        className={`bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm hover:shadow-xl border border-slate-200 dark:border-slate-700 hover:-translate-y-1 cursor-pointer group ${isDragging ? 'opacity-50' : ''}`}
     >
       <div className="flex justify-between items-start mb-2">
-        <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">{task.title}</h3>
+        <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">{task.title}</h3>
         <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onClick={handleEditClick} className="p-1 text-slate-500 hover:text-amber-500 dark:text-slate-400 dark:hover:text-amber-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+          <button onClick={handleEditClick} className="p-1 text-slate-500 hover:text-amber-500 dark:text-slate-400 dark:hover:text-amber-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
             <PencilIcon className="w-5 h-5" />
           </button>
           {onDeleteTask && (
-            <button onClick={handleDeleteClick} className="p-1 text-slate-500 hover:text-red-500 dark:text-slate-400 dark:hover:text-red-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <button onClick={handleDeleteClick} className="p-1 text-slate-500 hover:text-red-500 dark:text-slate-400 dark:hover:text-red-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
               <TrashIcon className="w-5 h-5" />
             </button>
           )}
@@ -76,20 +90,9 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, employee, onEditTask, onDelet
                     <span className="text-sm font-medium">{task.comments.length}</span>
                 </div>
             )}
-            <div title={task.priority} className="flex items-center">
-                <FlagIcon className={`w-5 h-5 ${priorityConfig[task.priority]}`}/>
-            </div>
-          <select 
-            value={task.status}
-            onChange={handleStatusChange}
-            onClick={(e) => e.stopPropagation()}
-            className="bg-slate-100 dark:bg-slate-700 border-none rounded-md text-sm px-2 py-1 focus:ring-2 focus:ring-sky-500 dark:text-slate-200"
-            aria-label={`Current status: ${task.status}. Change status.`}
-          >
-            {Object.values(TaskStatus).map(status => (
-              <option key={status} value={status}>{status}</option>
-            ))}
-          </select>
+            <span className={`text-xs font-bold px-2 py-1 rounded-full ${priorityPillConfig[task.priority].bg} ${priorityPillConfig[task.priority].text}`}>
+                {task.priority}
+            </span>
         </div>
       </div>
     </div>

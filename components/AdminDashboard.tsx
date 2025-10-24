@@ -6,16 +6,16 @@ interface AdminDashboardProps {
   employees: Employee[];
 }
 
-const StatCard: React.FC<{ title: string; value: number | string; color?: 'amber' | 'sky' | 'emerald' | 'slate' }> = ({ title, value, color = 'slate' }) => {
+const StatCard: React.FC<{ title: string; value: number | string; color?: 'orange' | 'indigo' | 'emerald' | 'slate' }> = ({ title, value, color = 'slate' }) => {
   const colorClasses = {
     slate: 'bg-slate-500',
-    amber: 'bg-amber-500',
-    sky: 'bg-sky-500',
+    orange: 'bg-orange-500',
+    indigo: 'bg-indigo-500',
     emerald: 'bg-emerald-500',
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-5 border border-slate-200 dark:border-slate-700">
+    <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-700/50 rounded-lg shadow-sm p-5 border border-slate-200 dark:border-slate-700">
       <div className="flex items-center mb-2">
         <span className={`w-3 h-3 rounded-full ${colorClasses[color]} mr-3`}></span>
         <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">{title}</p>
@@ -45,8 +45,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ tasks, employees }) => 
       <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-6">Admin Dashboard</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard title="Total Tasks" value={totalTasks} color="slate" />
-        <StatCard title="To Do" value={todoCount} color="amber" />
-        <StatCard title="In Progress" value={inProgressCount} color="sky" />
+        <StatCard title="To Do" value={todoCount} color="orange" />
+        <StatCard title="In Progress" value={inProgressCount} color="indigo" />
         <StatCard title="Done" value={doneCount} color="emerald" />
       </div>
 

@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Task, Employee, Priority } from '../types';
 import { useAuth } from '../auth/AuthContext';
 import { XMarkIcon } from './icons/XMarkIcon';
 import { FlagIcon } from './icons/FlagIcon';
+import { SparklesIcon } from './icons/SparklesIcon';
+import { getTaskAdviceFromAI } from '../services/geminiService';
 
 interface TaskDetailsModalProps {
   isOpen: boolean;
@@ -14,8 +16,8 @@ interface TaskDetailsModalProps {
 
 const priorityConfig = {
     [Priority.URGENT]: { text: 'text-red-600 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/50' },
-    [Priority.HIGH]: { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/50' },
-    [Priority.MEDIUM]: { text: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-100 dark:bg-sky-900/50' },
+    [Priority.HIGH]: { text: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/50' },
+    [Priority.MEDIUM]: { text: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-100 dark:bg-indigo-900/50' },
     [Priority.LOW]: { text: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-100 dark:bg-slate-700' },
 };
 
@@ -25,6 +27,32 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
   const assignee = employees.find(e => e.id === task.assigneeId);
   const currentUser = employees.find(e => e.id === user?.employeeId);
 
+  const [aiQuestion, setAiQuestion] = useState('');
+  const [aiResponse, setAiResponse] = useState('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Use a timeout to allow the component to mount before adding the 'open' class
+      const timer = setTimeout(() => setShow(true), 10);
+      return () => clearTimeout(timer);
+    } else {
+      setShow(false);
+    }
+  }, [isOpen]);
+  
+  useEffect(() => {
+    if (isOpen) {
+      // Reset AI state when modal opens
+      setAiQuestion('');
+      setAiResponse('');
+      setAiError(null);
+    }
+  }, [isOpen])
+
+
   if (!isOpen) return null;
 
   const handleCommentSubmit = (e: React.FormEvent) => {
@@ -32,6 +60,23 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
     if (newComment.trim()) {
       onAddComment(task.id, newComment);
       setNewComment('');
+    }
+  };
+
+  const handleAskAI = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiQuestion.trim()) return;
+
+    setIsAiLoading(true);
+    setAiResponse('');
+    setAiError(null);
+    try {
+      const response = await getTaskAdviceFromAI(task.title, task.description, aiQuestion);
+      setAiResponse(response);
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : 'An unknown error occurred.');
+    } finally {
+      setIsAiLoading(false);
     }
   };
 
@@ -50,11 +95,11 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-        <header className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+    <div className={`fixed inset-0 z-50 flex justify-center items-center p-4 transition-all duration-300 ${show ? 'bg-black bg-opacity-60' : 'bg-black bg-opacity-0'}`}>
+      <div className={`bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col transition-all duration-300 ${show ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
+        <header className="p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">{task.title}</h2>
-          <button onClick={onClose} className="p-1 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white rounded-full transition-colors">
+          <button onClick={onClose} className="p-1 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white rounded-full">
             <XMarkIcon className="w-6 h-6" />
           </button>
         </header>
@@ -86,6 +131,32 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
             <p className="text-slate-600 dark:text-slate-400 whitespace-pre-wrap">{task.description || 'No description provided.'}</p>
           </div>
           
+          <div className="border-t border-slate-200 dark:border-slate-700 pt-6 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+                <SparklesIcon className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
+                <h3 className="font-semibold text-slate-700 dark:text-slate-300">AI Assistant</h3>
+            </div>
+             <form onSubmit={handleAskAI} className="mb-4">
+              <textarea
+                value={aiQuestion}
+                onChange={(e) => setAiQuestion(e.target.value)}
+                placeholder="Ask AI for help with this task..."
+                rows={2}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white resize-y"
+              />
+              <button type="submit" className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 w-full sm:w-auto" disabled={!aiQuestion.trim() || isAiLoading}>
+                {isAiLoading ? 'Thinking...' : 'Ask AI'}
+              </button>
+            </form>
+            {isAiLoading && <div className="text-center p-4 text-slate-500 dark:text-slate-400">Loading response...</div>}
+            {aiError && <p className="text-red-500 text-sm p-4 bg-red-50 dark:bg-red-900/30 rounded-md">{aiError}</p>}
+            {aiResponse && (
+              <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg whitespace-pre-wrap text-slate-600 dark:text-slate-300">
+                {aiResponse}
+              </div>
+            )}
+          </div>
+          
           <div>
             <h3 className="font-semibold text-slate-700 dark:text-slate-300 mb-4">Activity</h3>
             <div className="space-y-4">
@@ -109,7 +180,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
           </div>
         </main>
 
-        <footer className="p-4 border-t border-slate-200 dark:border-slate-700">
+        <footer className="p-4 border-t bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700">
             <form onSubmit={handleCommentSubmit} className="flex items-start space-x-3">
                 {currentUser && <img src={currentUser.avatarUrl} alt={currentUser.name} className="w-8 h-8 rounded-full"/>}
                 <textarea
@@ -117,9 +188,9 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
                     onChange={(e) => setNewComment(e.target.value)}
                     placeholder="Add a comment..."
                     rows={1}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white resize-none"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white resize-none"
                 />
-                <button type="submit" className="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 disabled:opacity-50" disabled={!newComment.trim()}>
+                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50" disabled={!newComment.trim()}>
                     Send
                 </button>
             </form>

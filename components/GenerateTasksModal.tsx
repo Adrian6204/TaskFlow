@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Task, Employee } from '../types';
 import { generateTasksWithAI } from '../services/geminiService';
 
@@ -13,6 +13,24 @@ const GenerateTasksModal: React.FC<GenerateTasksModalProps> = ({ isOpen, onClose
   const [goal, setGoal] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Use a timeout to allow the component to mount before adding the 'open' class
+      const timer = setTimeout(() => setShow(true), 10);
+      return () => clearTimeout(timer);
+    } else {
+      setShow(false);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setGoal('');
+      setError(null);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -36,8 +54,8 @@ const GenerateTasksModal: React.FC<GenerateTasksModalProps> = ({ isOpen, onClose
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-lg p-6">
+    <div className={`fixed inset-0 z-50 flex justify-center items-center p-4 transition-all duration-300 ${show ? 'bg-black bg-opacity-60' : 'bg-black bg-opacity-0'}`}>
+      <div className={`bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-lg p-6 transition-all duration-300 ${show ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
         <h2 className="text-2xl font-bold mb-4 text-slate-800 dark:text-white">
           Generate Tasks with AI
         </h2>
@@ -52,7 +70,7 @@ const GenerateTasksModal: React.FC<GenerateTasksModalProps> = ({ isOpen, onClose
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
               rows={4}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
               placeholder="e.g., 'Launch a new marketing campaign for our Q4 product release'"
               required
             />
@@ -65,14 +83,14 @@ const GenerateTasksModal: React.FC<GenerateTasksModalProps> = ({ isOpen, onClose
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 disabled:opacity-50 dark:bg-slate-600 dark:text-slate-200 dark:hover:bg-slate-500 transition-colors"
+              className="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 disabled:opacity-50 dark:bg-slate-600 dark:text-slate-200 dark:hover:bg-slate-500"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-colors"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
               {isLoading && (
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

@@ -1,4 +1,5 @@
 
+
 import { GoogleGenAI, Type } from '@google/genai';
 import { Task, Employee } from '../types';
 
@@ -84,5 +85,33 @@ export async function generateTasksWithAI(
   } catch (error) {
     console.error('Error generating tasks with Gemini:', error);
     throw new Error('Failed to generate tasks. The AI model may be temporarily unavailable.');
+  }
+}
+
+
+export async function getTaskAdviceFromAI(
+  taskTitle: string,
+  taskDescription: string,
+  question: string
+): Promise<string> {
+  const prompt = `
+    You are a helpful project management assistant. You are advising on the following task:
+    - Task Title: "${taskTitle}"
+    - Task Description: "${taskDescription || 'No description provided.'}"
+    
+    A user has the following question about this task: "${question}"
+    
+    Please provide a helpful, concise, and actionable response. Format your response clearly.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+    return response.text;
+  } catch (error) {
+    console.error('Error getting advice from Gemini:', error);
+    throw new Error('Failed to get advice. The AI model may be temporarily unavailable.');
   }
 }

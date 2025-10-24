@@ -16,6 +16,17 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onSave, em
   const [assigneeId, setAssigneeId] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<Priority>(Priority.MEDIUM);
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Use a timeout to allow the component to mount before adding the 'open' class
+      const timer = setTimeout(() => setShow(true), 10);
+      return () => clearTimeout(timer);
+    } else {
+      setShow(false);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (taskToEdit) {
@@ -31,7 +42,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onSave, em
       setDueDate(new Date().toISOString().split('T')[0]);
       setPriority(Priority.MEDIUM);
     }
-  }, [taskToEdit, employees]);
+  }, [taskToEdit, employees, isOpen]); // Rerun when modal opens
 
   if (!isOpen) return null;
 
@@ -42,8 +53,8 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onSave, em
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-lg p-6">
+    <div className={`fixed inset-0 z-50 flex justify-center items-center p-4 transition-all duration-300 ${show ? 'bg-black bg-opacity-60' : 'bg-black bg-opacity-0'}`}>
+      <div className={`bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-lg p-6 transition-all duration-300 ${show ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
         <h2 className="text-2xl font-bold mb-4 text-slate-800 dark:text-white">
           {taskToEdit ? 'Edit Task' : 'Add New Task'}
         </h2>
@@ -55,7 +66,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onSave, em
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
               required
             />
           </div>
@@ -66,7 +77,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onSave, em
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -76,7 +87,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onSave, em
                 id="assignee"
                 value={assigneeId}
                 onChange={(e) => setAssigneeId(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
               >
                 {employees.map(emp => (
                   <option key={emp.id} value={emp.id}>{emp.name}</option>
@@ -90,7 +101,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onSave, em
                 id="dueDate"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                 required
               />
             </div>
@@ -100,7 +111,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onSave, em
                 id="priority"
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as Priority)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
               >
                 {PRIORITIES.map(p => (
                   <option key={p} value={p}>{p}</option>
@@ -112,13 +123,13 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onSave, em
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 dark:bg-slate-600 dark:text-slate-200 dark:hover:bg-slate-500 transition-colors"
+              className="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 dark:bg-slate-600 dark:text-slate-200 dark:hover:bg-slate-500"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 transition-colors"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
             >
               {taskToEdit ? 'Save Changes' : 'Add Task'}
             </button>

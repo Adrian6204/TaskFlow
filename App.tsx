@@ -9,9 +9,11 @@ import LoginPage from './components/LoginPage';
 import { useAuth } from './auth/AuthContext';
 import AdminDashboard from './components/AdminDashboard';
 import TaskDetailsModal from './components/TaskDetailsModal';
+import { useNotification } from './context/NotificationContext';
 
 const App: React.FC = () => {
   const { user } = useAuth();
+  const { showNotification } = useNotification();
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
   const [employees] = useState<Employee[]>(EMPLOYEES);
   const [isAddTaskModalOpen, setAddTaskModalOpen] = useState(false);
@@ -94,7 +96,14 @@ const App: React.FC = () => {
   };
 
   const handleUpdateTaskStatus = (taskId: number, newStatus: TaskStatus) => {
-    setTasks(tasks.map(task => task.id === taskId ? { ...task, status: newStatus } : task));
+    const taskToUpdate = tasks.find(t => t.id === taskId);
+    if (!taskToUpdate) return;
+    
+    // Only update and show notification if status is actually different.
+    if (taskToUpdate.status !== newStatus) {
+        setTasks(tasks.map(task => task.id === taskId ? { ...task, status: newStatus } : task));
+        showNotification(`Moved "${taskToUpdate.title}" to ${newStatus}`, 'success');
+    }
   };
   
   const addGeneratedTasks = (generatedTasks: Omit<Task, 'id' | 'status'>[]) => {
