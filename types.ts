@@ -33,6 +33,9 @@ export interface Task {
   status: TaskStatus;
   priority: Priority;
   comments: Comment[];
+  createdAt: string; // ISO 8601 string
+  completedAt?: string | null; // ISO 8601 string
+  blockedById?: number | null;
 }
 
 export type Role = 'user' | 'admin';
@@ -41,4 +44,14 @@ export interface User {
   username: string; // Will be the employee's full name
   role: Role;
   employeeId: string;
+}
+
+export interface ActivityLog {
+  id: number;
+  timestamp: string; // ISO 8601 string
+  message: string;
+  user: {
+    name: string;
+    avatarUrl: string;
+  }
 }

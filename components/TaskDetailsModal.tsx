@@ -5,12 +5,14 @@ import { XMarkIcon } from './icons/XMarkIcon';
 import { FlagIcon } from './icons/FlagIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
 import { getTaskAdviceFromAI } from '../services/geminiService';
+import { LockClosedIcon } from './icons/LockClosedIcon';
 
 interface TaskDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   task: Task;
   employees: Employee[];
+  allTasks: Task[];
   onAddComment: (taskId: number, content: string) => void;
 }
 
@@ -21,11 +23,12 @@ const priorityConfig = {
     [Priority.LOW]: { text: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-100 dark:bg-slate-700' },
 };
 
-const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, task, employees, onAddComment }) => {
+const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, task, employees, allTasks, onAddComment }) => {
   const [newComment, setNewComment] = useState('');
   const { user } = useAuth();
   const assignee = employees.find(e => e.id === task.assigneeId);
   const currentUser = employees.find(e => e.id === user?.employeeId);
+  const blockingTask = task.blockedById ? allTasks.find(t => t.id === task.blockedById) : null;
 
   const [aiQuestion, setAiQuestion] = useState('');
   const [aiResponse, setAiResponse] = useState('');
@@ -35,7 +38,6 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
 
   useEffect(() => {
     if (isOpen) {
-      // Use a timeout to allow the component to mount before adding the 'open' class
       const timer = setTimeout(() => setShow(true), 10);
       return () => clearTimeout(timer);
     } else {
@@ -45,7 +47,6 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
   
   useEffect(() => {
     if (isOpen) {
-      // Reset AI state when modal opens
       setAiQuestion('');
       setAiResponse('');
       setAiError(null);
@@ -105,7 +106,13 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
         </header>
 
         <main className="p-6 overflow-y-auto flex-grow">
-          <div className="grid grid-cols-3 gap-6 mb-6">
+          {blockingTask && (
+             <div className="bg-amber-50 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-700/50 rounded-lg p-3 flex items-center gap-3 mb-6">
+                <LockClosedIcon className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                <p className="text-sm text-amber-800 dark:text-amber-200">This task is blocked by: <span className="font-semibold">"{blockingTask.title}"</span></p>
+            </div>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
             <div className="flex items-center">
                 {assignee && <img src={assignee.avatarUrl} alt={assignee.name} className="w-8 h-8 rounded-full mr-3 border-2 border-white dark:border-slate-700" />}
                 <div>

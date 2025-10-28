@@ -1,9 +1,13 @@
-import React from 'react';
-import { Task, Employee, TaskStatus } from '../types';
+import React, { useState } from 'react';
+import { Task, Employee, TaskStatus, ActivityLog } from '../types';
+import TaskStatusPieChart from './charts/TaskStatusPieChart';
+import TasksPerEmployeeBarChart from './charts/TasksPerEmployeeBarChart';
+import { generateWeeklySummary } from '../services/geminiService';
 
 interface AdminDashboardProps {
   tasks: Task[];
   employees: Employee[];
+  activityLogs: ActivityLog[];
 }
 
 const StatCard: React.FC<{ title: string; value: number | string; color?: 'orange' | 'indigo' | 'emerald' | 'slate' }> = ({ title, value, color = 'slate' }) => {
@@ -25,20 +29,43 @@ const StatCard: React.FC<{ title: string; value: number | string; color?: 'orang
   );
 };
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ tasks, employees }) => {
+const getRelativeTime = (timestamp: string) => {
+    const now = new Date();
+    const logDate = new Date(timestamp);
+    const diffInSeconds = Math.floor((now.getTime() - logDate.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return 'Just now';
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays}d ago`;
+};
+
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ tasks, employees, activityLogs }) => {
   const totalTasks = tasks.length;
   const todoCount = tasks.filter(t => t.status === TaskStatus.TODO).length;
   const inProgressCount = tasks.filter(t => t.status === TaskStatus.IN_PROGRESS).length;
   const doneCount = tasks.filter(t => t.status === TaskStatus.DONE).length;
 
-  const employeeTasks = employees.map(employee => {
-    const assignedTasks = tasks.filter(task => task.assigneeId === employee.id);
-    return {
-      ...employee,
-      taskCount: assignedTasks.length,
-      tasksToDo: assignedTasks.filter(t => t.status === TaskStatus.TODO).length,
-    };
-  }).sort((a, b) => b.taskCount - a.taskCount);
+  const [summary, setSummary] = useState('');
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+
+  const handleGenerateSummary = async () => {
+    setIsSummaryLoading(true);
+    setSummaryError(null);
+    try {
+        const result = await generateWeeklySummary(tasks, employees);
+        setSummary(result);
+    } catch (err) {
+        setSummaryError(err instanceof Error ? err.message : 'An error occurred.');
+    } finally {
+        setIsSummaryLoading(false);
+    }
+  };
+
 
   return (
     <div className="mb-8">
@@ -50,25 +77,43 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ tasks, employees }) => 
         <StatCard title="Done" value={doneCount} color="emerald" />
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 sm:p-6 border border-slate-200 dark:border-slate-700">
-        <h3 className="text-xl font-bold mb-4 text-slate-800 dark:text-slate-100">Team Workload</h3>
-        <div className="space-y-4">
-          {employeeTasks.map(emp => (
-            <div key={emp.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-              <div className="flex items-center">
-                <img src={emp.avatarUrl} alt={emp.name} className="w-10 h-10 rounded-full mr-4 border-2 border-white dark:border-slate-600" />
-                <div>
-                  <p className="font-semibold text-slate-800 dark:text-slate-100">{emp.name}</p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">{emp.taskCount} total tasks</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="font-semibold text-slate-800 dark:text-slate-100">{emp.tasksToDo}</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">tasks to do</p>
-              </div>
-            </div>
-          ))}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 sm:p-6 border border-slate-200 dark:border-slate-700">
+           <h3 className="text-xl font-bold mb-4 text-slate-800 dark:text-slate-100">Task Overview</h3>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                <TaskStatusPieChart tasks={tasks} />
+                <TasksPerEmployeeBarChart tasks={tasks} employees={employees} />
+           </div>
         </div>
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 sm:p-6 border border-slate-200 dark:border-slate-700">
+            <h3 className="text-xl font-bold mb-4 text-slate-800 dark:text-slate-100">Activity Feed</h3>
+            <div className="space-y-3 h-80 overflow-y-auto pr-2">
+                {activityLogs.length > 0 ? activityLogs.map(log => (
+                    <div key={log.id} className="flex items-start">
+                        <img src={log.user.avatarUrl} alt={log.user.name} className="w-8 h-8 rounded-full mr-3 mt-1" />
+                        <div>
+                            <p className="text-sm text-slate-600 dark:text-slate-300">
+                                <span className="font-semibold text-slate-800 dark:text-slate-100">{log.user.name}</span> {log.message}
+                            </p>
+                            <p className="text-xs text-slate-400 dark:text-slate-500">{getRelativeTime(log.timestamp)}</p>
+                        </div>
+                    </div>
+                )) : <p className="text-sm text-slate-500 dark:text-slate-400 text-center pt-10">No recent activity.</p>}
+            </div>
+        </div>
+      </div>
+      
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 sm:p-6 border border-slate-200 dark:border-slate-700">
+        <h3 className="text-xl font-bold mb-4 text-slate-800 dark:text-slate-100">AI Weekly Summary</h3>
+        <button onClick={handleGenerateSummary} disabled={isSummaryLoading} className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 mb-4">
+            {isSummaryLoading ? 'Generating...' : 'Generate Summary'}
+        </button>
+        {summaryError && <p className="text-red-500">{summaryError}</p>}
+        {summary && (
+            <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg whitespace-pre-wrap text-slate-600 dark:text-slate-300">
+                {summary}
+            </div>
+        )}
       </div>
     </div>
   );

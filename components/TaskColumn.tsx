@@ -5,6 +5,7 @@ import TaskCard from './TaskCard';
 interface TaskColumnProps {
   status: TaskStatus;
   tasks: Task[];
+  allTasks: Task[];
   employees: Employee[];
   onEditTask: (task: Task) => void;
   onDeleteTask?: (taskId: number) => void;
@@ -30,7 +31,7 @@ const statusConfig = {
   },
 };
 
-const TaskColumn: React.FC<TaskColumnProps> = ({ status, tasks, employees, onEditTask, onDeleteTask, onUpdateTaskStatus, onViewTask }) => {
+const TaskColumn: React.FC<TaskColumnProps> = ({ status, tasks, allTasks, employees, onEditTask, onDeleteTask, onUpdateTaskStatus, onViewTask }) => {
   const config = statusConfig[status];
   const [isOver, setIsOver] = useState(false);
 
@@ -73,6 +74,7 @@ const TaskColumn: React.FC<TaskColumnProps> = ({ status, tasks, employees, onEdi
           <TaskCard
             key={task.id}
             task={task}
+            allTasks={allTasks}
             employee={employees.find(e => e.id === task.assigneeId)}
             onEditTask={onEditTask}
             onDeleteTask={onDeleteTask}

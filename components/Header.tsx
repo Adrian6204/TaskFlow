@@ -3,13 +3,16 @@ import { useAuth } from '../auth/AuthContext';
 import { PlusIcon } from './icons/PlusIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
 import ThemeToggle from './ThemeToggle';
+import { SearchIcon } from './icons/SearchIcon';
 
 interface HeaderProps {
   onAddTask: () => void;
   onGenerateTasks: () => void;
+  searchTerm: string;
+  onSearchChange: (term: string) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onAddTask, onGenerateTasks }) => {
+const Header: React.FC<HeaderProps> = ({ onAddTask, onGenerateTasks, searchTerm, onSearchChange }) => {
   const { user, logout } = useAuth();
 
   return (
@@ -18,11 +21,18 @@ const Header: React.FC<HeaderProps> = ({ onAddTask, onGenerateTasks }) => {
         <h1 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
           TaskFlow
         </h1>
-        {user && (
-          <span className="hidden sm:inline-block bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full px-3 py-1 text-sm font-semibold">
-            Logged in as {user.username}
-          </span>
-        )}
+        <div className="relative hidden lg:block">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <SearchIcon className="h-5 w-5 text-slate-400" />
+            </div>
+            <input 
+                type="text"
+                placeholder="Search tasks..."
+                value={searchTerm}
+                onChange={(e) => onSearchChange(e.target.value)}
+                className="block w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md py-2 pl-10 pr-3 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 sm:text-sm"
+            />
+        </div>
       </div>
       <div className="flex items-center space-x-2 sm:space-x-3">
         <button

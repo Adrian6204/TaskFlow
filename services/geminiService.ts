@@ -1,7 +1,6 @@
-
-
 import { GoogleGenAI, Type } from '@google/genai';
-import { Task, Employee } from '../types';
+import { Task, Employee, Priority, TaskStatus } from '../types';
+import { PRIORITIES } from '../constants';
 
 if (!process.env.API_KEY) {
   // This is a placeholder check. The actual environment variable is managed externally.
@@ -13,7 +12,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 export async function generateTasksWithAI(
   goal: string,
   employees: Employee[]
-): Promise<Omit<Task, 'id' | 'status'>[]> {
+): Promise<Pick<Task, 'title' | 'description' | 'assigneeId' | 'dueDate'>[]> {
   const employeeIds = employees.map(e => e.id);
   const employeeNames = employees.map(e => e.name).join(', ');
 
@@ -114,4 +113,100 @@ export async function getTaskAdviceFromAI(
     console.error('Error getting advice from Gemini:', error);
     throw new Error('Failed to get advice. The AI model may be temporarily unavailable.');
   }
+}
+
+export async function suggestTaskPriority(title: string, description: string): Promise<Priority> {
+  const prompt = `
+    Analyze the following task and suggest a priority level.
+    - Title: "${title}"
+    - Description: "${description || 'N/A'}"
+    
+    Consider keywords like 'urgent', 'bug', 'critical', 'blocker' for high/urgent priority, 
+    and 'plan', 'research', 'draft' for lower priority.
+    
+    The available priority levels are: ${PRIORITIES.join(', ')}.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            priority: {
+              type: Type.STRING,
+              description: `The suggested priority. Must be one of: ${PRIORITIES.join(', ')}`,
+            },
+          },
+          required: ['priority'],
+        },
+      },
+    });
+
+    const jsonText = response.text.trim();
+    const result = JSON.parse(jsonText);
+    const suggestedPriority = result.priority as Priority;
+    
+    if (PRIORITIES.includes(suggestedPriority)) {
+      return suggestedPriority;
+    } else {
+      console.warn(`AI suggested an invalid priority: ${suggestedPriority}. Defaulting to Medium.`);
+      return Priority.MEDIUM;
+    }
+  } catch (error) {
+    console.error('Error suggesting priority with Gemini:', error);
+    throw new Error('Failed to suggest a priority.');
+  }
+}
+
+export async function generateWeeklySummary(tasks: Task[], employees: Employee[]): Promise<string> {
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    
+    const recentlyCompletedTasks = tasks.filter(task => 
+        task.status === TaskStatus.DONE && task.completedAt && new Date(task.completedAt) > oneWeekAgo
+    );
+    
+    const newlyCreatedTasks = tasks.filter(task => 
+        new Date(task.createdAt) > oneWeekAgo
+    );
+
+    const overdueTasks = tasks.filter(task => 
+        new Date(task.dueDate) < new Date() && task.status !== TaskStatus.DONE
+    );
+
+    const employeeMap = new Map(employees.map(e => [e.id, e.name]));
+
+    const formatTaskList = (taskList: Task[]) => 
+        taskList.map(t => `- "${t.title}" (Assigned to: ${employeeMap.get(t.assigneeId) || 'N/A'})`).join('\n');
+
+    const prompt = `
+        You are a project manager AI. Based on the following data, generate a concise, human-readable summary of the project's progress over the last week.
+        Structure the summary into sections: "Key Accomplishments", "New Tasks Created", and "Attention Needed".
+        Be encouraging and professional.
+
+        **Tasks Completed in the Last 7 Days:**
+        ${recentlyCompletedTasks.length > 0 ? formatTaskList(recentlyCompletedTasks) : 'None'}
+
+        **Tasks Created in the Last 7 Days:**
+        ${newlyCreatedTasks.length > 0 ? formatTaskList(newlyCreatedTasks) : 'None'}
+        
+        **Currently Overdue Tasks:**
+        ${overdueTasks.length > 0 ? formatTaskList(overdueTasks) : 'None'}
+
+        Now, please generate the summary.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+        });
+        return response.text;
+    } catch (error) {
+        console.error('Error generating summary with Gemini:', error);
+        throw new Error('Failed to generate the weekly summary.');
+    }
 }

@@ -3,9 +3,11 @@ import { Task, Employee, TaskStatus, Priority } from '../types';
 import { PencilIcon } from './icons/PencilIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { ChatBubbleIcon } from './icons/ChatBubbleIcon';
+import { LockClosedIcon } from './icons/LockClosedIcon';
 
 interface TaskCardProps {
   task: Task;
+  allTasks: Task[];
   employee?: Employee;
   onEditTask: (task: Task) => void;
   onDeleteTask?: (taskId: number) => void;
@@ -20,13 +22,26 @@ const priorityPillConfig = {
     [Priority.LOW]: { text: 'text-slate-600 dark:text-slate-300', bg: 'bg-slate-200 dark:bg-slate-700' },
 };
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, employee, onEditTask, onDeleteTask, onUpdateTaskStatus, onViewTask }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, allTasks, employee, onEditTask, onDeleteTask, onUpdateTaskStatus, onViewTask }) => {
   const isOverdue = new Date(task.dueDate) < new Date() && task.status !== TaskStatus.DONE;
   const [isDragging, setIsDragging] = useState(false);
+
+  const isBlocked = !!task.blockedById;
+  const blockingTask = isBlocked ? allTasks.find(t => t.id === task.blockedById) : null;
   
-  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    e.stopPropagation(); // Prevent card click event
-    onUpdateTaskStatus(task.id, e.target.value as TaskStatus);
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    if (isBlocked) {
+      e.preventDefault();
+      return;
+    }
+    e.dataTransfer.setData('application/json', JSON.stringify(task));
+    setTimeout(() => {
+        setIsDragging(true);
+    }, 0);
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
   };
 
   const handleEditClick = (e: React.MouseEvent) => {
@@ -39,27 +54,16 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, employee, onEditTask, onDelet
     onDeleteTask?.(task.id);
   };
 
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
-    e.dataTransfer.setData('application/json', JSON.stringify(task));
-    setTimeout(() => {
-        setIsDragging(true);
-    }, 0);
-  };
-
-  const handleDragEnd = () => {
-    setIsDragging(false);
-  };
-
   return (
     <div 
         onClick={() => onViewTask(task)}
-        draggable
+        draggable={!isBlocked}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
-        className={`bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm hover:shadow-xl border border-slate-200 dark:border-slate-700 hover:-translate-y-1 cursor-pointer group ${isDragging ? 'opacity-50' : ''}`}
+        className={`bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm border border-slate-200 dark:border-slate-700 group ${isDragging ? 'opacity-50' : ''} ${isBlocked ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50' : 'cursor-pointer hover:shadow-xl hover:-translate-y-1'}`}
     >
       <div className="flex justify-between items-start mb-2">
-        <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">{task.title}</h3>
+        <h3 className={`font-bold text-lg text-slate-800 dark:text-slate-100 ${!isBlocked && 'group-hover:text-indigo-600 dark:group-hover:text-indigo-400'}`}>{task.title}</h3>
         <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button onClick={handleEditClick} className="p-1 text-slate-500 hover:text-amber-500 dark:text-slate-400 dark:hover:text-amber-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
             <PencilIcon className="w-5 h-5" />
@@ -84,6 +88,14 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, employee, onEditTask, onDelet
         </div>
         
         <div className="flex items-center space-x-3">
+            {isBlocked && (
+              <div className="relative group/tooltip">
+                <LockClosedIcon className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+                <div className="absolute bottom-full mb-2 w-max max-w-xs bg-slate-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none">
+                  Blocked by: "{blockingTask?.title || 'Unknown Task'}"
+                </div>
+              </div>
+            )}
             {task.comments.length > 0 && (
                 <div className="flex items-center text-slate-500 dark:text-slate-400">
                     <ChatBubbleIcon className="w-4 h-4 mr-1"/>

@@ -1,5 +1,3 @@
-
-
 import { Task, Employee, TaskStatus, Priority } from './types';
 
 export const EMPLOYEES: Employee[] = [
@@ -8,6 +6,8 @@ export const EMPLOYEES: Employee[] = [
   { id: 'emp-3', name: 'Charlie Brown', avatarUrl: 'https://picsum.photos/seed/charlie/40/40' },
   { id: 'emp-4', name: 'Diana Miller', avatarUrl: 'https://picsum.photos/seed/diana/40/40' },
 ];
+
+const now = new Date();
 
 export const INITIAL_TASKS: Task[] = [
   {
@@ -19,6 +19,7 @@ export const INITIAL_TASKS: Task[] = [
     status: TaskStatus.TODO,
     priority: Priority.HIGH,
     comments: [],
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 2,
@@ -29,6 +30,7 @@ export const INITIAL_TASKS: Task[] = [
     status: TaskStatus.IN_PROGRESS,
     priority: Priority.URGENT,
     comments: [],
+    createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 3,
@@ -39,6 +41,8 @@ export const INITIAL_TASKS: Task[] = [
     status: TaskStatus.DONE,
     priority: Priority.MEDIUM,
     comments: [],
+    createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 4,
@@ -49,6 +53,7 @@ export const INITIAL_TASKS: Task[] = [
     status: TaskStatus.IN_PROGRESS,
     priority: Priority.URGENT,
     comments: [],
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 5,
@@ -59,7 +64,20 @@ export const INITIAL_TASKS: Task[] = [
     status: TaskStatus.TODO,
     priority: Priority.LOW,
     comments: [],
+    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
   },
+  {
+    id: 6,
+    title: 'Deploy authentication API to staging',
+    description: 'Once the API is developed, deploy it to the staging environment for QA testing.',
+    assigneeId: 'emp-2',
+    dueDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    status: TaskStatus.TODO,
+    priority: Priority.HIGH,
+    comments: [],
+    createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+    blockedById: 2, // Blocked by task 2
+  }
 ];
 
 export const TASK_STATUSES = [TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.DONE];

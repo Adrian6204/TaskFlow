@@ -5,7 +5,7 @@ import { generateTasksWithAI } from '../services/geminiService';
 interface GenerateTasksModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onTasksGenerated: (tasks: Omit<Task, 'id' | 'status'>[]) => void;
+  onTasksGenerated: (tasks: Pick<Task, 'title' | 'description' | 'assigneeId' | 'dueDate'>[]) => void;
   employees: Employee[];
 }
 

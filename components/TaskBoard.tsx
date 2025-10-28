@@ -5,6 +5,7 @@ import TaskColumn from './TaskColumn';
 
 interface TaskBoardProps {
   tasks: Task[];
+  allTasks: Task[]; // For dependency checking
   employees: Employee[];
   onEditTask: (task: Task) => void;
   onDeleteTask?: (taskId: number) => void;
@@ -12,7 +13,7 @@ interface TaskBoardProps {
   onViewTask: (task: Task) => void;
 }
 
-const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, employees, onEditTask, onDeleteTask, onUpdateTaskStatus, onViewTask }) => {
+const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, allTasks, employees, onEditTask, onDeleteTask, onUpdateTaskStatus, onViewTask }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
       {TASK_STATUSES.map(status => (
@@ -20,6 +21,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, employees, onEditTask, onD
           key={status}
           status={status}
           tasks={tasks.filter(task => task.status === status)}
+          allTasks={allTasks}
           employees={employees}
           onEditTask={onEditTask}
           onDeleteTask={onDeleteTask}

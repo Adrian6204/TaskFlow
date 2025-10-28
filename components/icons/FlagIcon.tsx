@@ -7,10 +7,7 @@ export const FlagIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     fill="currentColor"
     {...props}
   >
-    <path
-      fillRule="evenodd"
-      d="M3 3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3.334L12 18.333l-1.667-4.333H4a1 1 0 0 1-1-1V3zm1 1v8h3.333L9 16.333 10.667 12H16V4H4z"
-      clipRule="evenodd"
-    />
+    <path d="M4 3a1 1 0 011-1h6a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+    <path d="M4 3v14a1 1 0 01-2 0V3a1 1 0 012 0z" />
   </svg>
 );
