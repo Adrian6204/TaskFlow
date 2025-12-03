@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Task, Employee } from '../types';
 import { generateTasksWithAI } from '../services/geminiService';
@@ -19,11 +20,22 @@ const GenerateTasksModal: React.FC<GenerateTasksModalProps> = ({ isOpen, onClose
     if (isOpen) {
       // Use a timeout to allow the component to mount before adding the 'open' class
       const timer = setTimeout(() => setShow(true), 10);
-      return () => clearTimeout(timer);
+      
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          onClose();
+        }
+      };
+      document.addEventListener('keydown', handleKeyDown);
+
+      return () => {
+        clearTimeout(timer);
+        document.removeEventListener('keydown', handleKeyDown);
+      };
     } else {
       setShow(false);
     }
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   useEffect(() => {
     if (isOpen) {
@@ -54,8 +66,17 @@ const GenerateTasksModal: React.FC<GenerateTasksModalProps> = ({ isOpen, onClose
   };
 
   return (
-    <div className={`fixed inset-0 z-50 flex justify-center items-center p-4 transition-all duration-300 ${show ? 'bg-black bg-opacity-60' : 'bg-black bg-opacity-0'}`}>
-      <div className={`bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-lg p-6 transition-all duration-300 ${show ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
+    <div 
+        className={`fixed inset-0 z-50 flex justify-center items-center p-4 transition-all duration-300 ${show ? 'visible' : 'invisible'}`}
+        role="dialog"
+        aria-modal="true"
+    >
+      <div 
+        className={`absolute inset-0 bg-black transition-opacity duration-300 ${show ? 'opacity-60' : 'opacity-0'}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div className={`bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-lg p-6 transition-all duration-300 relative z-10 transform ${show ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
         <h2 className="text-2xl font-bold mb-4 text-slate-800 dark:text-white">
           Generate Tasks with AI
         </h2>

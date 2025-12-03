@@ -1,9 +1,15 @@
+
 import React, { useState } from 'react';
 import { Task, Employee, TaskStatus, Priority } from '../types';
 import { PencilIcon } from './icons/PencilIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { ChatBubbleIcon } from './icons/ChatBubbleIcon';
 import { LockClosedIcon } from './icons/LockClosedIcon';
+import { ListBulletIcon } from './icons/ListBulletIcon';
+import { ClockIcon } from './icons/ClockIcon';
+import { PlayIcon } from './icons/PlayIcon';
+import { StopIcon } from './icons/StopIcon';
+import TagPill from './TagPill';
 
 interface TaskCardProps {
   task: Task;
@@ -13,6 +19,7 @@ interface TaskCardProps {
   onDeleteTask?: (taskId: number) => void;
   onUpdateTaskStatus: (taskId: number, newStatus: TaskStatus) => void;
   onViewTask: (task: Task) => void;
+  onToggleTimer: (taskId: number) => void;
 }
 
 const priorityPillConfig = {
@@ -22,12 +29,17 @@ const priorityPillConfig = {
     [Priority.LOW]: { text: 'text-slate-600 dark:text-slate-300', bg: 'bg-slate-200 dark:bg-slate-700' },
 };
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, allTasks, employee, onEditTask, onDeleteTask, onUpdateTaskStatus, onViewTask }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, allTasks, employee, onEditTask, onDeleteTask, onUpdateTaskStatus, onViewTask, onToggleTimer }) => {
   const isOverdue = new Date(task.dueDate) < new Date() && task.status !== TaskStatus.DONE;
   const [isDragging, setIsDragging] = useState(false);
 
   const isBlocked = !!task.blockedById;
   const blockingTask = isBlocked ? allTasks.find(t => t.id === task.blockedById) : null;
+  
+  const completedSubtasks = (task.subtasks || []).filter(st => st.isCompleted).length;
+  const totalSubtasks = (task.subtasks || []).length;
+  
+  const isTracking = !!task.timerStartTime;
   
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     if (isBlocked) {
@@ -53,6 +65,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, allTasks, employee, onEditTas
     e.stopPropagation();
     onDeleteTask?.(task.id);
   };
+  
+  const handleTimerClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onToggleTimer(task.id);
+  };
 
   return (
     <div 
@@ -65,6 +82,15 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, allTasks, employee, onEditTas
       <div className="flex justify-between items-start mb-2">
         <h3 className={`font-bold text-lg text-slate-800 dark:text-slate-100 ${!isBlocked && 'group-hover:text-indigo-600 dark:group-hover:text-indigo-400'}`}>{task.title}</h3>
         <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Timer Button */}
+          <button 
+            onClick={handleTimerClick}
+            className={`p-1 rounded-full transition-colors ${isTracking ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30' : 'text-slate-500 hover:text-indigo-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-indigo-400 dark:hover:bg-slate-700'}`}
+            title={isTracking ? "Stop Timer" : "Start Timer"}
+          >
+              {isTracking ? <StopIcon className="w-5 h-5" /> : <PlayIcon className="w-5 h-5" />}
+          </button>
+          
           <button onClick={handleEditClick} className="p-1 text-slate-500 hover:text-amber-500 dark:text-slate-400 dark:hover:text-amber-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
             <PencilIcon className="w-5 h-5" />
           </button>
@@ -77,7 +103,16 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, allTasks, employee, onEditTas
       </div>
       <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-2">{task.description}</p>
       
-      <div className="flex justify-between items-center">
+      {/* Tags Section */}
+      {task.tags && task.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+            {task.tags.map(tag => (
+                <TagPill key={tag} text={tag} />
+            ))}
+        </div>
+      )}
+
+      <div className="flex justify-between items-center mt-auto">
         <div className="flex items-center space-x-3">
           {employee && (
             <img src={employee.avatarUrl} alt={employee.name} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-700" title={employee.name} />
@@ -88,6 +123,12 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, allTasks, employee, onEditTas
         </div>
         
         <div className="flex items-center space-x-3">
+            {isTracking && (
+                <div className="text-indigo-600 dark:text-indigo-400 animate-pulse" title="Timer Running">
+                    <ClockIcon className="w-5 h-5" />
+                </div>
+            )}
+            
             {isBlocked && (
               <div className="relative group/tooltip">
                 <LockClosedIcon className="w-5 h-5 text-slate-500 dark:text-slate-400" />
@@ -96,6 +137,14 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, allTasks, employee, onEditTas
                 </div>
               </div>
             )}
+            
+            {totalSubtasks > 0 && (
+                <div className="flex items-center text-slate-500 dark:text-slate-400" title={`${completedSubtasks}/${totalSubtasks} subtasks completed`}>
+                    <ListBulletIcon className="w-4 h-4 mr-1"/>
+                    <span className="text-sm font-medium">{completedSubtasks}/{totalSubtasks}</span>
+                </div>
+            )}
+
             {task.comments.length > 0 && (
                 <div className="flex items-center text-slate-500 dark:text-slate-400">
                     <ChatBubbleIcon className="w-4 h-4 mr-1"/>

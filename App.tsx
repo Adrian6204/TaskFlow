@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
-import { Task, TaskStatus, Employee, Priority, Comment, ActivityLog } from './types';
+
+import React, { useState, useMemo, useEffect } from 'react';
+import { Task, TaskStatus, Employee, Priority, Comment, ActivityLog, TimeLogEntry } from './types';
 import { INITIAL_TASKS, EMPLOYEES } from './constants';
 import Header from './components/Header';
 import TaskBoard from './components/TaskBoard';
@@ -14,11 +15,23 @@ import FilterBar from './components/FilterBar';
 import CalendarView from './components/CalendarView';
 import { ViewColumnsIcon } from './components/icons/ViewColumnsIcon';
 import { CalendarIcon } from './components/icons/CalendarIcon';
+import ConfirmationModal from './components/ConfirmationModal';
 
 const App: React.FC = () => {
   const { user } = useAuth();
   const { showNotification } = useNotification();
-  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+  
+  // Initialize tasks from LocalStorage or fall back to constants
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    try {
+      const savedTasks = localStorage.getItem('taskflow_tasks');
+      return savedTasks ? JSON.parse(savedTasks) : INITIAL_TASKS;
+    } catch (error) {
+      console.error("Failed to load tasks from local storage", error);
+      return INITIAL_TASKS;
+    }
+  });
+
   const [employees] = useState<Employee[]>(EMPLOYEES);
   const [isAddTaskModalOpen, setAddTaskModalOpen] = useState(false);
   const [isGenerateTaskModalOpen, setGenerateTaskModalOpen] = useState(false);
@@ -26,10 +39,32 @@ const App: React.FC = () => {
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
-  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [taskToDeleteId, setTaskToDeleteId] = useState<number | null>(null);
+  
+  // Initialize logs from LocalStorage
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>(() => {
+    try {
+      const savedLogs = localStorage.getItem('taskflow_logs');
+      return savedLogs ? JSON.parse(savedLogs) : [];
+    } catch (error) {
+       console.error("Failed to load logs from local storage", error);
+       return [];
+    }
+  });
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({ assignee: 'all', priority: 'all' });
   const [currentView, setCurrentView] = useState<'board' | 'calendar'>('board');
+
+  // Persistence Effects
+  useEffect(() => {
+    localStorage.setItem('taskflow_tasks', JSON.stringify(tasks));
+  }, [tasks]);
+
+  useEffect(() => {
+    localStorage.setItem('taskflow_logs', JSON.stringify(activityLogs));
+  }, [activityLogs]);
 
   const tasksForCurrentUser = useMemo(() => {
     if (!user) {
@@ -42,7 +77,11 @@ const App: React.FC = () => {
   
   const filteredTasks = useMemo(() => {
     return tasksForCurrentUser.filter(task => {
-        const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase());
+        const term = searchTerm.toLowerCase();
+        const matchesSearch = 
+            task.title.toLowerCase().includes(term) ||
+            (task.tags && task.tags.some(tag => tag.toLowerCase().includes(term))); // Include tags in search
+            
         const matchesAssignee = filters.assignee === 'all' || task.assigneeId === filters.assignee;
         const matchesPriority = filters.priority === 'all' || task.priority === filters.priority;
         return matchesSearch && matchesAssignee && matchesPriority;
@@ -63,7 +102,7 @@ const App: React.FC = () => {
         avatarUrl: currentUserEmployee.avatarUrl
       }
     };
-    setActivityLogs(prev => [newLog, ...prev].slice(0, 20)); // Keep last 20 activities
+    setActivityLogs(prev => [newLog, ...prev].slice(0, 50)); // Keep last 50 activities
   };
 
   const handleOpenAddTaskModal = (task: Task | null = null) => {
@@ -94,7 +133,7 @@ const App: React.FC = () => {
     setSelectedTask(null);
   };
 
-  const handleSaveTask = (taskData: Omit<Task, 'id' | 'status' | 'comments' | 'createdAt'>, id: number | null) => {
+  const handleSaveTask = (taskData: Omit<Task, 'id' | 'status' | 'comments' | 'createdAt' | 'subtasks'> & { subtasks?: any[], tags?: string[] }, id: number | null) => {
     if (id !== null) {
       setTasks(tasks.map(t => t.id === id ? { ...tasks.find(tsk => tsk.id === id)!, ...taskData } : t));
       logActivity(`updated task "${taskData.title}"`);
@@ -103,6 +142,10 @@ const App: React.FC = () => {
         id: Date.now(),
         status: TaskStatus.TODO,
         comments: [],
+        subtasks: [],
+        tags: [],
+        timeLogs: [],
+        timerStartTime: null,
         createdAt: new Date().toISOString(),
         ...taskData
       };
@@ -110,6 +153,13 @@ const App: React.FC = () => {
       logActivity(`created task "${newTask.title}"`);
     }
     handleCloseAddTaskModal();
+  };
+  
+  const handleUpdateTask = (updatedTask: Task) => {
+      setTasks(prevTasks => prevTasks.map(t => t.id === updatedTask.id ? updatedTask : t));
+      if (selectedTask && selectedTask.id === updatedTask.id) {
+          setSelectedTask(updatedTask);
+      }
   };
   
   const handleAddComment = (taskId: number, content: string) => {
@@ -143,11 +193,26 @@ const App: React.FC = () => {
       console.error("Permission denied: Only admins can delete tasks.");
       return;
     }
-    const taskToDelete = tasks.find(t => t.id === taskId);
+    setTaskToDeleteId(taskId);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (taskToDeleteId === null) return;
+    
+    const taskToDelete = tasks.find(t => t.id === taskToDeleteId);
     if (taskToDelete) {
       logActivity(`deleted task "${taskToDelete.title}"`);
     }
-    setTasks(tasks.filter(task => task.id !== taskId));
+    setTasks(tasks.filter(task => task.id !== taskToDeleteId));
+    showNotification('Task deleted successfully', 'success');
+    setDeleteModalOpen(false);
+    setTaskToDeleteId(null);
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteModalOpen(false);
+    setTaskToDeleteId(null);
   };
 
   const handleUpdateTaskStatus = (taskId: number, newStatus: TaskStatus) => {
@@ -171,10 +236,58 @@ const App: React.FC = () => {
       status: TaskStatus.TODO,
       priority: Priority.MEDIUM,
       comments: [],
+      subtasks: [],
+      tags: [],
+      timeLogs: [],
+      timerStartTime: null,
       createdAt: new Date().toISOString(),
     }));
     setTasks(prevTasks => [...prevTasks, ...newTasks]);
     logActivity(`generated ${newTasks.length} tasks with AI`);
+  };
+
+  const handleToggleTimer = (taskId: number) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const now = new Date();
+    let updatedTask: Task;
+
+    if (task.timerStartTime) {
+      // Stop Timer
+      const startTime = new Date(task.timerStartTime);
+      const duration = now.getTime() - startTime.getTime();
+      
+      const newLog: TimeLogEntry = {
+        id: Date.now().toString(),
+        startTime: task.timerStartTime,
+        endTime: now.toISOString(),
+        duration: duration
+      };
+
+      updatedTask = {
+        ...task,
+        timerStartTime: null,
+        timeLogs: [newLog, ...(task.timeLogs || [])]
+      };
+      
+      // Calculate minutes for cleaner log
+      const minutes = Math.floor(duration / 60000);
+      const seconds = Math.floor((duration % 60000) / 1000);
+      logActivity(`stopped timer on "${task.title}" (tracked ${minutes}m ${seconds}s)`);
+      showNotification(`Timer stopped. Logged ${minutes}m ${seconds}s.`, 'success');
+    } else {
+      // Start Timer
+      updatedTask = {
+        ...task,
+        timerStartTime: now.toISOString(),
+        timeLogs: task.timeLogs || [] // Ensure array exists
+      };
+      logActivity(`started timer on "${task.title}"`);
+      showNotification(`Timer started for "${task.title}"`, 'success');
+    }
+    
+    handleUpdateTask(updatedTask);
   };
 
   if (!user) {
@@ -229,6 +342,7 @@ const App: React.FC = () => {
               onDeleteTask={user.role === 'admin' ? handleDeleteTask : undefined}
               onUpdateTaskStatus={handleUpdateTaskStatus}
               onViewTask={handleOpenTaskDetailsModal}
+              onToggleTimer={handleToggleTimer}
             />
         ) : (
             <CalendarView 
@@ -262,7 +376,18 @@ const App: React.FC = () => {
           task={selectedTask}
           employees={employees}
           onAddComment={handleAddComment}
+          onUpdateTask={handleUpdateTask}
           allTasks={tasks}
+          onToggleTimer={handleToggleTimer}
+        />
+      )}
+      {isDeleteModalOpen && (
+        <ConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={handleCancelDelete}
+          onConfirm={handleConfirmDelete}
+          title="Delete Task"
+          message="Are you sure you want to delete this task? This action cannot be undone."
         />
       )}
     </div>

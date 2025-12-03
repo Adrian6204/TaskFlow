@@ -1,3 +1,4 @@
+
 import { Task, Employee, TaskStatus, Priority } from './types';
 
 export const EMPLOYEES: Employee[] = [
@@ -19,6 +20,14 @@ export const INITIAL_TASKS: Task[] = [
     status: TaskStatus.TODO,
     priority: Priority.HIGH,
     comments: [],
+    subtasks: [
+      { id: 'st-1', title: 'Gather assets', isCompleted: true },
+      { id: 'st-2', title: 'Draft desktop view', isCompleted: false },
+      { id: 'st-3', title: 'Draft mobile view', isCompleted: false },
+    ],
+    tags: ['Design', 'UI/UX'],
+    timeLogs: [],
+    timerStartTime: null,
     createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -30,6 +39,12 @@ export const INITIAL_TASKS: Task[] = [
     status: TaskStatus.IN_PROGRESS,
     priority: Priority.URGENT,
     comments: [],
+    subtasks: [],
+    tags: ['Backend', 'Security', 'API'],
+    timeLogs: [
+       { id: 'tl-1', startTime: new Date(Date.now() - 4 * 3600 * 1000).toISOString(), endTime: new Date(Date.now() - 2 * 3600 * 1000).toISOString(), duration: 2 * 3600 * 1000 }
+    ],
+    timerStartTime: null,
     createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -41,6 +56,10 @@ export const INITIAL_TASKS: Task[] = [
     status: TaskStatus.DONE,
     priority: Priority.MEDIUM,
     comments: [],
+    subtasks: [],
+    tags: ['Marketing', 'Content'],
+    timeLogs: [],
+    timerStartTime: null,
     createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
     completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
   },
@@ -53,6 +72,10 @@ export const INITIAL_TASKS: Task[] = [
     status: TaskStatus.IN_PROGRESS,
     priority: Priority.URGENT,
     comments: [],
+    subtasks: [],
+    tags: ['Bug', 'Critical', 'Payments'],
+    timeLogs: [],
+    timerStartTime: new Date().toISOString(), // Currently tracking
     createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -64,6 +87,10 @@ export const INITIAL_TASKS: Task[] = [
     status: TaskStatus.TODO,
     priority: Priority.LOW,
     comments: [],
+    subtasks: [],
+    tags: ['HR', 'Event'],
+    timeLogs: [],
+    timerStartTime: null,
     createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -75,6 +102,10 @@ export const INITIAL_TASKS: Task[] = [
     status: TaskStatus.TODO,
     priority: Priority.HIGH,
     comments: [],
+    subtasks: [],
+    tags: ['DevOps', 'Deployment'],
+    timeLogs: [],
+    timerStartTime: null,
     createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
     blockedById: 2, // Blocked by task 2
   }

@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from '@google/genai';
 import { Task, Employee, Priority, TaskStatus } from '../types';
 import { PRIORITIES } from '../constants';
@@ -209,4 +210,38 @@ export async function generateWeeklySummary(tasks: Task[], employees: Employee[]
         console.error('Error generating summary with Gemini:', error);
         throw new Error('Failed to generate the weekly summary.');
     }
+}
+
+export async function generateSubtasks(title: string, description: string): Promise<string[]> {
+  const prompt = `
+    For the task titled "${title}" with description "${description}", generate a list of 3 to 6 actionable subtasks (checklist items).
+    Return only the list of strings.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            subtasks: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+            },
+          },
+          required: ['subtasks'],
+        },
+      },
+    });
+
+    const jsonText = response.text.trim();
+    const result = JSON.parse(jsonText);
+    return result.subtasks || [];
+  } catch (error) {
+    console.error('Error generating subtasks with Gemini:', error);
+    throw new Error('Failed to generate subtasks.');
+  }
 }

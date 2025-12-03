@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Task, Employee, TaskStatus } from '../types';
 import TaskCard from './TaskCard';
@@ -11,6 +12,7 @@ interface TaskColumnProps {
   onDeleteTask?: (taskId: number) => void;
   onUpdateTaskStatus: (taskId: number, newStatus: TaskStatus) => void;
   onViewTask: (task: Task) => void;
+  onToggleTimer: (taskId: number) => void;
 }
 
 const statusConfig = {
@@ -31,7 +33,7 @@ const statusConfig = {
   },
 };
 
-const TaskColumn: React.FC<TaskColumnProps> = ({ status, tasks, allTasks, employees, onEditTask, onDeleteTask, onUpdateTaskStatus, onViewTask }) => {
+const TaskColumn: React.FC<TaskColumnProps> = ({ status, tasks, allTasks, employees, onEditTask, onDeleteTask, onUpdateTaskStatus, onViewTask, onToggleTimer }) => {
   const config = statusConfig[status];
   const [isOver, setIsOver] = useState(false);
 
@@ -80,6 +82,7 @@ const TaskColumn: React.FC<TaskColumnProps> = ({ status, tasks, allTasks, employ
             onDeleteTask={onDeleteTask}
             onUpdateTaskStatus={onUpdateTaskStatus}
             onViewTask={onViewTask}
+            onToggleTimer={onToggleTimer}
           />
         ))}
         {tasks.length === 0 && (

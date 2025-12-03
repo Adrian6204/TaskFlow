@@ -1,3 +1,4 @@
+
 export enum TaskStatus {
   TODO = 'To Do',
   IN_PROGRESS = 'In Progress',
@@ -24,6 +25,19 @@ export interface Comment {
   timestamp: string; // ISO 8601 string
 }
 
+export interface Subtask {
+  id: string;
+  title: string;
+  isCompleted: boolean;
+}
+
+export interface TimeLogEntry {
+  id: string;
+  startTime: string; // ISO 8601 string
+  endTime: string; // ISO 8601 string
+  duration: number; // milliseconds
+}
+
 export interface Task {
   id: number;
   title: string;
@@ -33,6 +47,10 @@ export interface Task {
   status: TaskStatus;
   priority: Priority;
   comments: Comment[];
+  subtasks: Subtask[];
+  tags: string[];
+  timeLogs: TimeLogEntry[];
+  timerStartTime?: string | null; // ISO 8601 string if timer is running, null otherwise
   createdAt: string; // ISO 8601 string
   completedAt?: string | null; // ISO 8601 string
   blockedById?: number | null;
