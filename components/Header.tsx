@@ -4,15 +4,18 @@ import { PlusIcon } from './icons/PlusIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
 import ThemeToggle from './ThemeToggle';
 import { SearchIcon } from './icons/SearchIcon';
+import { Employee } from '../types';
 
 interface HeaderProps {
   onAddTask: () => void;
   onGenerateTasks: () => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
+  onOpenProfile: () => void;
+  currentUserEmployee?: Employee;
 }
 
-const Header: React.FC<HeaderProps> = ({ onAddTask, onGenerateTasks, searchTerm, onSearchChange }) => {
+const Header: React.FC<HeaderProps> = ({ onAddTask, onGenerateTasks, searchTerm, onSearchChange, onOpenProfile, currentUserEmployee }) => {
   const { user, logout } = useAuth();
 
   return (
@@ -53,12 +56,38 @@ const Header: React.FC<HeaderProps> = ({ onAddTask, onGenerateTasks, searchTerm,
         </button>
         <div className="h-6 w-px bg-slate-300 dark:bg-slate-600"></div>
         <ThemeToggle />
+        
+        {/* Profile Section */}
+        <div 
+            onClick={onOpenProfile}
+            className="flex items-center space-x-2 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 p-1.5 rounded-lg transition-colors group"
+            title="Edit Profile"
+        >
+            {currentUserEmployee ? (
+                <img 
+                    src={currentUserEmployee.avatarUrl} 
+                    alt={currentUserEmployee.name} 
+                    className="w-8 h-8 rounded-full border border-slate-300 dark:border-slate-600 group-hover:border-indigo-500 transition-colors"
+                />
+            ) : (
+                <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold">
+                    {user?.username.charAt(0).toUpperCase()}
+                </div>
+            )}
+            <span className="hidden sm:inline text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                {currentUserEmployee?.name || user?.username}
+            </span>
+        </div>
+
         <button
           onClick={logout}
-          className="flex items-center text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold py-2 px-2 sm:px-4 rounded-lg"
+          className="text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 p-2 rounded-lg"
           aria-label="Log out"
+          title="Log out"
         >
-           <span className="hidden sm:inline">Logout</span>
+             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+            </svg>
         </button>
       </div>
     </header>

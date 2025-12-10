@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
+  updateUser: (updates: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,13 +51,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         );
 
         if (foundUser) {
+          // We need to fetch the employee data. 
+          // Note: In a real app, we'd fetch the fresh employee data from the backend.
+          // Here, we check the static list, but the App component manages the *dynamic* list.
+          // For initial login, using static is fine, but the App will sync valid state if needed.
           const employee = EMPLOYEES.find(e => e.id === foundUser.employeeId);
           if (employee) {
             setUser({
               username: employee.name, // Use the full name for display
               role: foundUser.role,
               employeeId: foundUser.employeeId,
-            });
+              avatarUrl: employee.avatarUrl // Add avatar to User type if strictly needed, or just rely on employee lookup
+            } as User & { avatarUrl?: string }); // Cast to include optional avatar if User type doesn't have it yet
             resolve();
           } else {
             reject(new Error('Associated employee not found.'));
@@ -72,8 +78,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
   };
 
+  const updateUser = (updates: Partial<User>) => {
+    if (user) {
+        setUser({ ...user, ...updates });
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

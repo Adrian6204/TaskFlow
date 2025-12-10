@@ -295,21 +295,25 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
                 <p className="text-sm text-amber-800 dark:text-amber-200">This task is blocked by: <span className="font-semibold">"{blockingTask.title}"</span></p>
             </div>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
             <div className="flex items-center">
                 {assignee && <img src={assignee.avatarUrl} alt={assignee.name} className="w-8 h-8 rounded-full mr-3 border-2 border-white dark:border-slate-700" />}
                 <div>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">Assignee</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 block mb-1">Assignee</span>
                     <p className="font-semibold text-slate-800 dark:text-slate-100">{assignee?.name || 'Unassigned'}</p>
                 </div>
             </div>
             <div>
-                <span className="text-xs text-slate-500 dark:text-slate-400">Due Date</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 block mb-1">Due Date</span>
                 <p className="font-semibold text-slate-800 dark:text-slate-100">{new Date(task.dueDate).toLocaleDateString()}</p>
             </div>
+            <div>
+                <span className="text-xs text-slate-500 dark:text-slate-400 block mb-1">Created On</span>
+                <p className="font-semibold text-slate-800 dark:text-slate-100">{new Date(task.createdAt).toLocaleDateString()}</p>
+            </div>
              <div>
-                <span className="text-xs text-slate-500 dark:text-slate-400">Priority</span>
-                <div className={`inline-flex items-center gap-2 px-2 py-1 rounded-full text-sm font-semibold ${priorityConfig[task.priority].bg} ${priorityConfig[task.priority].text}`}>
+                <span className="text-xs text-slate-500 dark:text-slate-400 block mb-1">Priority</span>
+                <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-sm font-medium ${priorityConfig[task.priority].bg} ${priorityConfig[task.priority].text}`}>
                     <FlagIcon className="w-4 h-4" />
                     {task.priority}
                 </div>

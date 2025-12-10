@@ -112,6 +112,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, allTasks, employee, onEditTas
         </div>
       )}
 
+      {/* Creation Date */}
+      <div className="text-xs text-slate-400 dark:text-slate-500 mb-2">
+        Added: {new Date(task.createdAt).toLocaleDateString()}
+      </div>
+
       <div className="flex justify-between items-center mt-auto">
         <div className="flex items-center space-x-3">
           {employee && (

@@ -9,7 +9,7 @@ import TagPill from './TagPill';
 interface AddTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (task: Omit<Task, 'id' | 'status' | 'comments' | 'createdAt' | 'subtasks' | 'tags'> & { subtasks?: Subtask[], tags?: string[] }, id: number | null) => void;
+  onSave: (task: Omit<Task, 'id' | 'status' | 'comments' | 'createdAt' | 'subtasks' | 'tags' | 'timeLogs' | 'timerStartTime' | 'completedAt'> & { subtasks?: Subtask[], tags?: string[] }, id: number | null) => void;
   employees: Employee[];
   taskToEdit: Task | null;
   allTasks: Task[];

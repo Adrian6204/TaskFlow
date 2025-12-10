@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Task, TaskStatus, Employee, Priority, Comment, ActivityLog, TimeLogEntry } from './types';
 import { INITIAL_TASKS, EMPLOYEES } from './constants';
@@ -16,9 +15,10 @@ import CalendarView from './components/CalendarView';
 import { ViewColumnsIcon } from './components/icons/ViewColumnsIcon';
 import { CalendarIcon } from './components/icons/CalendarIcon';
 import ConfirmationModal from './components/ConfirmationModal';
+import ProfileModal from './components/ProfileModal';
 
 const App: React.FC = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { showNotification } = useNotification();
   
   // Initialize tasks from LocalStorage or fall back to constants
@@ -32,10 +32,22 @@ const App: React.FC = () => {
     }
   });
 
-  const [employees] = useState<Employee[]>(EMPLOYEES);
+  // Initialize employees from LocalStorage to support persistent profile edits
+  const [employees, setEmployees] = useState<Employee[]>(() => {
+    try {
+      const savedEmployees = localStorage.getItem('taskflow_employees');
+      return savedEmployees ? JSON.parse(savedEmployees) : EMPLOYEES;
+    } catch (error) {
+      console.error("Failed to load employees from local storage", error);
+      return EMPLOYEES;
+    }
+  });
+
   const [isAddTaskModalOpen, setAddTaskModalOpen] = useState(false);
   const [isGenerateTaskModalOpen, setGenerateTaskModalOpen] = useState(false);
   const [isTaskDetailsModalOpen, setTaskDetailsModalOpen] = useState(false);
+  const [isProfileModalOpen, setProfileModalOpen] = useState(false);
+  
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
@@ -61,6 +73,10 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('taskflow_tasks', JSON.stringify(tasks));
   }, [tasks]);
+  
+  useEffect(() => {
+    localStorage.setItem('taskflow_employees', JSON.stringify(employees));
+  }, [employees]);
 
   useEffect(() => {
     localStorage.setItem('taskflow_logs', JSON.stringify(activityLogs));
@@ -87,6 +103,10 @@ const App: React.FC = () => {
         return matchesSearch && matchesAssignee && matchesPriority;
     });
   }, [tasksForCurrentUser, searchTerm, filters]);
+  
+  const currentUserEmployee = useMemo(() => {
+      return employees.find(e => e.id === user?.employeeId);
+  }, [employees, user]);
 
   const logActivity = (message: string) => {
     if (!user) return;
@@ -132,8 +152,16 @@ const App: React.FC = () => {
     setTaskDetailsModalOpen(false);
     setSelectedTask(null);
   };
+  
+  const handleOpenProfileModal = () => {
+      setProfileModalOpen(true);
+  };
 
-  const handleSaveTask = (taskData: Omit<Task, 'id' | 'status' | 'comments' | 'createdAt' | 'subtasks'> & { subtasks?: any[], tags?: string[] }, id: number | null) => {
+  const handleCloseProfileModal = () => {
+      setProfileModalOpen(false);
+  };
+
+  const handleSaveTask = (taskData: Omit<Task, 'id' | 'status' | 'comments' | 'createdAt' | 'subtasks' | 'tags' | 'timeLogs' | 'timerStartTime' | 'completedAt'> & { subtasks?: any[], tags?: string[] }, id: number | null) => {
     if (id !== null) {
       setTasks(tasks.map(t => t.id === id ? { ...tasks.find(tsk => tsk.id === id)!, ...taskData } : t));
       logActivity(`updated task "${taskData.title}"`);
@@ -289,6 +317,24 @@ const App: React.FC = () => {
     
     handleUpdateTask(updatedTask);
   };
+  
+  const handleSaveProfile = (name: string, avatarUrl: string) => {
+      if (!user) return;
+      
+      // 1. Update the Employees list (affects task cards, assignments)
+      const updatedEmployees = employees.map(emp => 
+        emp.id === user.employeeId 
+            ? { ...emp, name, avatarUrl } 
+            : emp
+      );
+      setEmployees(updatedEmployees);
+      
+      // 2. Update the Auth Context (affects header display immediately)
+      updateUser({ username: name });
+      
+      showNotification('Profile updated successfully', 'success');
+      logActivity('updated their profile');
+  };
 
   if (!user) {
     return <LoginPage />;
@@ -301,6 +347,8 @@ const App: React.FC = () => {
         onGenerateTasks={handleOpenGenerateTasksModal}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
+        onOpenProfile={handleOpenProfileModal}
+        currentUserEmployee={currentUserEmployee}
       />
       <main className="p-4 sm:p-6 lg:p-8">
         {user.role === 'admin' && (
@@ -389,6 +437,15 @@ const App: React.FC = () => {
           title="Delete Task"
           message="Are you sure you want to delete this task? This action cannot be undone."
         />
+      )}
+      {isProfileModalOpen && user && (
+          <ProfileModal 
+            isOpen={isProfileModalOpen}
+            onClose={handleCloseProfileModal}
+            user={user}
+            currentUserEmployee={currentUserEmployee}
+            onSave={handleSaveProfile}
+          />
       )}
     </div>
   );
