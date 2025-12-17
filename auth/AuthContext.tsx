@@ -1,22 +1,16 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { User, Role } from '../types';
-import { EMPLOYEES } from '../constants';
 
-interface AuthContextType {
-  user: User | null;
-  login: (username: string, password: string) => Promise<void>;
-  logout: () => void;
-  updateUser: (updates: Partial<User>) => void;
-}
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import { User, Role, Employee, AuthContextType } from '../types';
+import { EMPLOYEES } from '../constants';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// In a real app, this would be a secure API call.
-const MOCK_USERS = [
-  { username: 'alice', password: 'password', employeeId: 'emp-1', role: 'admin' as Role },
-  { username: 'bob', password: 'password', employeeId: 'emp-2', role: 'user' as Role },
-  { username: 'charlie', password: 'password', employeeId: 'emp-3', role: 'user' as Role },
-  { username: 'diana', password: 'password', employeeId: 'emp-4', role: 'user' as Role },
+// Initial seed data for users if local storage is empty
+const SEED_USERS = [
+  { login: 'alice', password: 'password', employeeId: 'emp-1', role: 'admin' as Role },
+  { login: 'bob', password: 'password', employeeId: 'emp-2', role: 'user' as Role },
+  { login: 'charlie', password: 'password', employeeId: 'emp-3', role: 'user' as Role },
+  { login: 'diana', password: 'password', employeeId: 'emp-4', role: 'user' as Role },
 ];
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -30,6 +24,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   });
 
+  // Ensure initial data exists in LocalStorage for production-like feel
+  useEffect(() => {
+    const existingUsers = localStorage.getItem('taskflow_users');
+    if (!existingUsers) {
+      localStorage.setItem('taskflow_users', JSON.stringify(SEED_USERS));
+    }
+    
+    // Ensure employees are seeded if missing (matches App.tsx logic but useful for AuthContext to have access)
+    const existingEmployees = localStorage.getItem('taskflow_employees');
+    if (!existingEmployees) {
+        localStorage.setItem('taskflow_employees', JSON.stringify(EMPLOYEES));
+    }
+  }, []);
+
   useEffect(() => {
     try {
       if (user) {
@@ -42,35 +50,97 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [user]);
 
+  const getUsersFromStorage = () => {
+      try {
+          const stored = localStorage.getItem('taskflow_users');
+          return stored ? JSON.parse(stored) : SEED_USERS;
+      } catch {
+          return SEED_USERS;
+      }
+  };
+
+  const getEmployeesFromStorage = (): Employee[] => {
+      try {
+          const stored = localStorage.getItem('taskflow_employees');
+          return stored ? JSON.parse(stored) : EMPLOYEES;
+      } catch {
+          return EMPLOYEES;
+      }
+  };
+
   const login = async (username: string, password: string): Promise<void> => {
     return new Promise((resolve, reject) => {
-      // Simulate API call
       setTimeout(() => {
-        const foundUser = MOCK_USERS.find(
-          (u) => u.username.toLowerCase() === username.toLowerCase() && u.password === password
+        const users = getUsersFromStorage();
+        const foundUser = users.find(
+          (u: any) => u.login.toLowerCase() === username.toLowerCase() && u.password === password
         );
 
         if (foundUser) {
-          // We need to fetch the employee data. 
-          // Note: In a real app, we'd fetch the fresh employee data from the backend.
-          // Here, we check the static list, but the App component manages the *dynamic* list.
-          // For initial login, using static is fine, but the App will sync valid state if needed.
-          const employee = EMPLOYEES.find(e => e.id === foundUser.employeeId);
+          const employees = getEmployeesFromStorage();
+          const employee = employees.find(e => e.id === foundUser.employeeId);
+          
           if (employee) {
             setUser({
-              username: employee.name, // Use the full name for display
+              username: employee.name, // Use the full name/display name
               role: foundUser.role,
               employeeId: foundUser.employeeId,
-              avatarUrl: employee.avatarUrl // Add avatar to User type if strictly needed, or just rely on employee lookup
-            } as User & { avatarUrl?: string }); // Cast to include optional avatar if User type doesn't have it yet
+              avatarUrl: employee.avatarUrl
+            } as User & { avatarUrl?: string });
             resolve();
           } else {
-            reject(new Error('Associated employee not found.'));
+            reject(new Error('Associated employee profile not found.'));
           }
         } else {
           reject(new Error('Invalid username or password'));
         }
       }, 500);
+    });
+  };
+
+  const signup = async (username: string, password: string, fullName: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            const users = getUsersFromStorage();
+            if (users.find((u: any) => u.login.toLowerCase() === username.toLowerCase())) {
+                reject(new Error('Username already taken'));
+                return;
+            }
+
+            const newEmployeeId = `emp-${Date.now()}`;
+            
+            // 1. Create Employee Profile
+            const newEmployee: Employee = {
+                id: newEmployeeId,
+                name: fullName,
+                avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random&color=fff&bold=true`
+            };
+
+            const employees = getEmployeesFromStorage();
+            const updatedEmployees = [...employees, newEmployee];
+            localStorage.setItem('taskflow_employees', JSON.stringify(updatedEmployees));
+
+            // 2. Create User Credentials
+            const newUserCred = {
+                login: username,
+                password: password,
+                employeeId: newEmployeeId,
+                role: 'user' // Default role for new signups
+            };
+            
+            const updatedUsers = [...users, newUserCred];
+            localStorage.setItem('taskflow_users', JSON.stringify(updatedUsers));
+
+            // 3. Auto Login
+            setUser({
+                username: fullName,
+                role: 'user',
+                employeeId: newEmployeeId,
+                avatarUrl: newEmployee.avatarUrl
+            } as User & { avatarUrl?: string });
+            
+            resolve();
+        }, 800);
     });
   };
 
@@ -85,7 +155,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

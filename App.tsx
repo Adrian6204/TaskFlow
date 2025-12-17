@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Task, TaskStatus, Employee, Priority, Comment, ActivityLog, TimeLogEntry } from './types';
 import { INITIAL_TASKS, EMPLOYEES } from './constants';
@@ -42,6 +43,20 @@ const App: React.FC = () => {
       return EMPLOYEES;
     }
   });
+
+  // When user logs in/signs up, refresh the employees list to ensure the new user is present
+  useEffect(() => {
+    if (user) {
+        try {
+            const savedEmployees = localStorage.getItem('taskflow_employees');
+            if (savedEmployees) {
+                setEmployees(JSON.parse(savedEmployees));
+            }
+        } catch (error) {
+            console.error("Failed to refresh employees from storage", error);
+        }
+    }
+  }, [user]);
 
   const [isAddTaskModalOpen, setAddTaskModalOpen] = useState(false);
   const [isGenerateTaskModalOpen, setGenerateTaskModalOpen] = useState(false);
