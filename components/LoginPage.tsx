@@ -1,12 +1,36 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { UserIcon } from './icons/UserIcon';
 import { LockClosedIcon } from './icons/LockClosedIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
+import { ClockIcon } from './icons/ClockIcon';
+import { ViewColumnsIcon } from './icons/ViewColumnsIcon';
+
+const HERO_SLIDES = [
+  {
+    icon: <SparklesIcon className="w-12 h-12 text-white" />,
+    title: "Manage tasks with AI precision",
+    content: "TaskFlow has completely transformed how our team collaborates. The AI-powered breakdown of complex goals into actionable tasks is a game changer.",
+    accent: "bg-indigo-500/30"
+  },
+  {
+    icon: <ViewColumnsIcon className="w-12 h-12 text-white" />,
+    title: "Visualize your workflow",
+    content: "Switch between Kanban boards and Calendars effortlessly. Keep your team aligned and milestones on track with high-visibility tracking.",
+    accent: "bg-violet-500/30"
+  },
+  {
+    icon: <ClockIcon className="w-12 h-12 text-white" />,
+    title: "Accurate Time Tracking",
+    content: "Understand exactly where your time goes. Built-in timers and detailed logs help teams optimize their productivity and bill accurately.",
+    accent: "bg-purple-500/30"
+  }
+];
 
 const LoginPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [activeSlide, setActiveSlide] = useState(0);
   
   // Login State
   const [username, setUsername] = useState('');
@@ -20,6 +44,14 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const { login, signup } = useAuth();
+
+  // Carousel Effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,7 +103,7 @@ const LoginPage: React.FC = () => {
             <span className="text-2xl font-bold tracking-tight">TaskFlow</span>
           </div>
 
-          <div>
+          <div className="transition-all duration-300 transform">
             <h2 className="mt-6 text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               {isLogin ? 'Welcome back' : 'Create an account'}
             </h2>
@@ -83,7 +115,7 @@ const LoginPage: React.FC = () => {
           <div className="mt-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               {!isLogin && (
-                  <div>
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                     <label htmlFor="fullName" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                       Full Name
                     </label>
@@ -151,7 +183,7 @@ const LoginPage: React.FC = () => {
               </div>
 
               {!isLogin && (
-                <div>
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                     <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                     Confirm Password
                     </label>
@@ -175,7 +207,7 @@ const LoginPage: React.FC = () => {
               )}
 
               {error && (
-                <div className="rounded-md bg-red-50 dark:bg-red-900/30 p-3">
+                <div className="rounded-md bg-red-50 dark:bg-red-900/30 p-3 animate-pulse">
                   <div className="flex">
                     <div className="flex-shrink-0">
                       <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -193,7 +225,7 @@ const LoginPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
                 >
                   {isLoading 
                     ? (isLogin ? 'Signing in...' : 'Creating account...') 
@@ -231,32 +263,40 @@ const LoginPage: React.FC = () => {
       <div className="hidden lg:block relative w-0 flex-1 bg-indigo-600 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-violet-700" />
         
-        {/* Abstract decorative shapes */}
-        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white opacity-10 blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 w-[500px] h-[500px] rounded-full bg-indigo-400 opacity-20 blur-3xl transform -translate-x-1/2 -translate-y-1/2" />
+        {/* Animated abstract decorative shapes */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white opacity-10 blur-3xl animate-pulse" />
+        <div className="absolute top-1/2 left-1/2 w-[500px] h-[500px] rounded-full bg-indigo-400 opacity-20 blur-3xl transform -translate-x-1/2 -translate-y-1/2 animate-bounce" style={{ animationDuration: '8s' }} />
         <div className="absolute bottom-0 right-0 w-80 h-80 rounded-full bg-purple-500 opacity-20 blur-3xl" />
 
         <div className="relative h-full flex flex-col justify-center items-center p-12 text-center">
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-lg border border-white/20 shadow-2xl">
-                <div className="mb-6 flex justify-center">
-                    <div className="bg-indigo-500/30 p-4 rounded-full ring-4 ring-indigo-400/20">
-                         <SparklesIcon className="w-12 h-12 text-white" />
+            <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-10 max-w-lg border border-white/20 shadow-2xl min-h-[400px] flex flex-col justify-center transition-all duration-700">
+                <div key={activeSlide} className="animate-in fade-in slide-in-from-right-10 duration-700 flex flex-col items-center">
+                    <div className={`mb-8 flex justify-center ${HERO_SLIDES[activeSlide].accent} p-6 rounded-full ring-4 ring-white/10 transition-all duration-500`}>
+                         {HERO_SLIDES[activeSlide].icon}
                     </div>
+                    <h2 className="text-3xl font-bold text-white mb-6 tracking-tight">
+                        {HERO_SLIDES[activeSlide].title}
+                    </h2>
+                    <p className="text-indigo-50/90 text-lg leading-relaxed font-medium italic">
+                        "{HERO_SLIDES[activeSlide].content}"
+                    </p>
                 </div>
-                <h2 className="text-3xl font-bold text-white mb-4">
-                    Manage tasks with AI precision
-                </h2>
-                <p className="text-indigo-100 text-lg leading-relaxed">
-                    "TaskFlow has completely transformed how our team collaborates. The AI-powered breakdown of complex goals into actionable tasks is a game changer."
-                </p>
-                <div className="mt-6 flex items-center justify-center space-x-2">
-                    <div className="w-2 h-2 rounded-full bg-white"></div>
-                    <div className="w-2 h-2 rounded-full bg-white/40"></div>
-                    <div className="w-2 h-2 rounded-full bg-white/40"></div>
+
+                <div className="mt-12 flex items-center justify-center space-x-3">
+                    {HERO_SLIDES.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setActiveSlide(idx)}
+                        className={`transition-all duration-300 rounded-full cursor-pointer h-2.5 ${
+                          activeSlide === idx ? 'w-8 bg-white' : 'w-2.5 bg-white/40 hover:bg-white/60'
+                        }`}
+                        aria-label={`Go to slide ${idx + 1}`}
+                      />
+                    ))}
                 </div>
             </div>
             
-            <div className="mt-12 text-indigo-200 text-sm font-medium">
+            <div className="mt-12 text-indigo-100/60 text-sm font-medium">
                 © {new Date().getFullYear()} TaskFlow Inc. All rights reserved.
             </div>
         </div>
