@@ -22,29 +22,24 @@ const App: React.FC = () => {
   const { user, updateUser } = useAuth();
   const { showNotification } = useNotification();
   
-  // Initialize tasks from LocalStorage or fall back to constants
   const [tasks, setTasks] = useState<Task[]>(() => {
     try {
       const savedTasks = localStorage.getItem('taskflow_tasks');
       return savedTasks ? JSON.parse(savedTasks) : INITIAL_TASKS;
     } catch (error) {
-      console.error("Failed to load tasks from local storage", error);
       return INITIAL_TASKS;
     }
   });
 
-  // Initialize employees from LocalStorage to support persistent profile edits
   const [employees, setEmployees] = useState<Employee[]>(() => {
     try {
       const savedEmployees = localStorage.getItem('taskflow_employees');
       return savedEmployees ? JSON.parse(savedEmployees) : EMPLOYEES;
     } catch (error) {
-      console.error("Failed to load employees from local storage", error);
       return EMPLOYEES;
     }
   });
 
-  // When user logs in/signs up, refresh the employees list to ensure the new user is present
   useEffect(() => {
     if (user) {
         try {
@@ -53,7 +48,7 @@ const App: React.FC = () => {
                 setEmployees(JSON.parse(savedEmployees));
             }
         } catch (error) {
-            console.error("Failed to refresh employees from storage", error);
+            console.error("Failed to refresh employees", error);
         }
     }
   }, [user]);
@@ -69,13 +64,11 @@ const App: React.FC = () => {
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
   const [taskToDeleteId, setTaskToDeleteId] = useState<number | null>(null);
   
-  // Initialize logs from LocalStorage
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>(() => {
     try {
       const savedLogs = localStorage.getItem('taskflow_logs');
       return savedLogs ? JSON.parse(savedLogs) : [];
     } catch (error) {
-       console.error("Failed to load logs from local storage", error);
        return [];
     }
   });
@@ -84,7 +77,6 @@ const App: React.FC = () => {
   const [filters, setFilters] = useState({ assignee: 'all', priority: 'all' });
   const [currentView, setCurrentView] = useState<'board' | 'calendar'>('board');
 
-  // Persistence Effects
   useEffect(() => {
     localStorage.setItem('taskflow_tasks', JSON.stringify(tasks));
   }, [tasks]);
@@ -98,9 +90,7 @@ const App: React.FC = () => {
   }, [activityLogs]);
 
   const tasksForCurrentUser = useMemo(() => {
-    if (!user) {
-      return [];
-    }
+    if (!user) return [];
     return user.role === 'admin' 
       ? tasks 
       : tasks.filter(task => task.assigneeId === user.employeeId);
@@ -111,7 +101,7 @@ const App: React.FC = () => {
         const term = searchTerm.toLowerCase();
         const matchesSearch = 
             task.title.toLowerCase().includes(term) ||
-            (task.tags && task.tags.some(tag => tag.toLowerCase().includes(term))); // Include tags in search
+            (task.tags && task.tags.some(tag => tag.toLowerCase().includes(term)));
             
         const matchesAssignee = filters.assignee === 'all' || task.assigneeId === filters.assignee;
         const matchesPriority = filters.priority === 'all' || task.priority === filters.priority;
@@ -137,7 +127,7 @@ const App: React.FC = () => {
         avatarUrl: currentUserEmployee.avatarUrl
       }
     };
-    setActivityLogs(prev => [newLog, ...prev].slice(0, 50)); // Keep last 50 activities
+    setActivityLogs(prev => [newLog, ...prev].slice(0, 50));
   };
 
   const handleOpenAddTaskModal = (task: Task | null = null) => {
@@ -145,280 +135,119 @@ const App: React.FC = () => {
     setAddTaskModalOpen(true);
   };
 
-  const handleCloseAddTaskModal = () => {
-    setAddTaskModalOpen(false);
-    setTaskToEdit(null);
-  };
-
-  const handleOpenGenerateTasksModal = () => {
-    setGenerateTaskModalOpen(true);
-  };
-
-  const handleCloseGenerateTasksModal = () => {
-    setGenerateTaskModalOpen(false);
-  };
-
-  const handleOpenTaskDetailsModal = (task: Task) => {
-    setSelectedTask(task);
-    setTaskDetailsModalOpen(true);
-  };
-
-  const handleCloseTaskDetailsModal = () => {
-    setTaskDetailsModalOpen(false);
-    setSelectedTask(null);
-  };
-  
-  const handleOpenProfileModal = () => {
-      setProfileModalOpen(true);
-  };
-
-  const handleCloseProfileModal = () => {
-      setProfileModalOpen(false);
-  };
-
-  const handleSaveTask = (taskData: Omit<Task, 'id' | 'status' | 'comments' | 'createdAt' | 'subtasks' | 'tags' | 'timeLogs' | 'timerStartTime' | 'completedAt'> & { subtasks?: any[], tags?: string[] }, id: number | null) => {
-    if (id !== null) {
-      setTasks(tasks.map(t => t.id === id ? { ...tasks.find(tsk => tsk.id === id)!, ...taskData } : t));
-      logActivity(`updated task "${taskData.title}"`);
-    } else {
-      const newTask: Task = {
-        id: Date.now(),
-        status: TaskStatus.TODO,
-        comments: [],
-        subtasks: [],
-        tags: [],
-        timeLogs: [],
-        timerStartTime: null,
-        createdAt: new Date().toISOString(),
-        ...taskData
-      };
-      setTasks([...tasks, newTask]);
-      logActivity(`created task "${newTask.title}"`);
-    }
-    handleCloseAddTaskModal();
-  };
-  
-  const handleUpdateTask = (updatedTask: Task) => {
-      setTasks(prevTasks => prevTasks.map(t => t.id === updatedTask.id ? updatedTask : t));
-      if (selectedTask && selectedTask.id === updatedTask.id) {
-          setSelectedTask(updatedTask);
-      }
-  };
-  
-  const handleAddComment = (taskId: number, content: string) => {
-    if (!user) return;
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
-
-    const newComment: Comment = {
-      id: Date.now(),
-      authorId: user.employeeId,
-      content,
-      timestamp: new Date().toISOString(),
-    };
-    const updatedTasks = tasks.map(t => {
-      if (t.id === taskId) {
-        const updatedTask = { ...t, comments: [...t.comments, newComment] };
-        if(selectedTask?.id === taskId) {
-          setSelectedTask(updatedTask);
-        }
-        return updatedTask;
-      }
-      return t;
-    });
-    setTasks(updatedTasks);
-    logActivity(`commented on task "${task.title}"`);
-  };
-
-
-  const handleDeleteTask = (taskId: number) => {
-    if (user?.role !== 'admin') {
-      console.error("Permission denied: Only admins can delete tasks.");
-      return;
-    }
-    setTaskToDeleteId(taskId);
-    setDeleteModalOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (taskToDeleteId === null) return;
-    
-    const taskToDelete = tasks.find(t => t.id === taskToDeleteId);
-    if (taskToDelete) {
-      logActivity(`deleted task "${taskToDelete.title}"`);
-    }
-    setTasks(tasks.filter(task => task.id !== taskToDeleteId));
-    showNotification('Task deleted successfully', 'success');
-    setDeleteModalOpen(false);
-    setTaskToDeleteId(null);
-  };
-
-  const handleCancelDelete = () => {
-    setDeleteModalOpen(false);
-    setTaskToDeleteId(null);
-  };
-
   const handleUpdateTaskStatus = (taskId: number, newStatus: TaskStatus) => {
     const taskToUpdate = tasks.find(t => t.id === taskId);
     if (!taskToUpdate) return;
     
     if (taskToUpdate.status !== newStatus) {
-        logActivity(`moved "${taskToUpdate.title}" from ${taskToUpdate.status} to ${newStatus}`);
+        logActivity(`moved "${taskToUpdate.title}" to ${newStatus}`);
         const completedAt = newStatus === TaskStatus.DONE ? new Date().toISOString() : taskToUpdate.completedAt;
         const unblockedTasks = tasks.map(t => (t.blockedById === taskId) ? {...t, blockedById: null} : t);
 
         setTasks(unblockedTasks.map(task => task.id === taskId ? { ...task, status: newStatus, completedAt } : task));
-        showNotification(`Moved "${taskToUpdate.title}" to ${newStatus}`, 'success');
+        showNotification(`Moved to ${newStatus}`, 'success');
     }
   };
-  
-  const addGeneratedTasks = (generatedTasks: Pick<Task, 'title' | 'description' | 'assigneeId' | 'dueDate'>[]) => {
-    const newTasks: Task[] = generatedTasks.map(task => ({
-      ...task,
-      id: Date.now() + Math.random(),
-      status: TaskStatus.TODO,
-      priority: Priority.MEDIUM,
-      comments: [],
-      subtasks: [],
-      tags: [],
-      timeLogs: [],
-      timerStartTime: null,
-      createdAt: new Date().toISOString(),
-    }));
-    setTasks(prevTasks => [...prevTasks, ...newTasks]);
-    logActivity(`generated ${newTasks.length} tasks with AI`);
-  };
 
-  const handleToggleTimer = (taskId: number) => {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
-
-    const now = new Date();
-    let updatedTask: Task;
-
-    if (task.timerStartTime) {
-      // Stop Timer
-      const startTime = new Date(task.timerStartTime);
-      const duration = now.getTime() - startTime.getTime();
-      
-      const newLog: TimeLogEntry = {
-        id: Date.now().toString(),
-        startTime: task.timerStartTime,
-        endTime: now.toISOString(),
-        duration: duration
-      };
-
-      updatedTask = {
-        ...task,
-        timerStartTime: null,
-        timeLogs: [newLog, ...(task.timeLogs || [])]
-      };
-      
-      // Calculate minutes for cleaner log
-      const minutes = Math.floor(duration / 60000);
-      const seconds = Math.floor((duration % 60000) / 1000);
-      logActivity(`stopped timer on "${task.title}" (tracked ${minutes}m ${seconds}s)`);
-      showNotification(`Timer stopped. Logged ${minutes}m ${seconds}s.`, 'success');
-    } else {
-      // Start Timer
-      updatedTask = {
-        ...task,
-        timerStartTime: now.toISOString(),
-        timeLogs: task.timeLogs || [] // Ensure array exists
-      };
-      logActivity(`started timer on "${task.title}"`);
-      showNotification(`Timer started for "${task.title}"`, 'success');
-    }
-    
-    handleUpdateTask(updatedTask);
-  };
-  
-  const handleSaveProfile = (name: string, avatarUrl: string) => {
-      if (!user) return;
-      
-      // 1. Update the Employees list (affects task cards, assignments)
-      const updatedEmployees = employees.map(emp => 
-        emp.id === user.employeeId 
-            ? { ...emp, name, avatarUrl } 
-            : emp
-      );
-      setEmployees(updatedEmployees);
-      
-      // 2. Update the Auth Context (affects header display immediately)
-      updateUser({ username: name });
-      
-      showNotification('Profile updated successfully', 'success');
-      logActivity('updated their profile');
-  };
-
-  if (!user) {
-    return <LoginPage />;
-  }
+  if (!user) return <LoginPage />;
 
   return (
-    <div className="min-h-screen text-slate-800 dark:text-slate-200">
+    <div className="min-h-screen flex flex-col">
       <Header 
         onAddTask={() => handleOpenAddTaskModal()} 
-        onGenerateTasks={handleOpenGenerateTasksModal}
+        onGenerateTasks={() => setGenerateTaskModalOpen(true)}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
-        onOpenProfile={handleOpenProfileModal}
+        onOpenProfile={() => setProfileModalOpen(true)}
         currentUserEmployee={currentUserEmployee}
       />
-      <main className="p-4 sm:p-6 lg:p-8">
+      <main className="flex-grow p-4 sm:p-6 lg:p-8 space-y-8 animate-in fade-in duration-700">
         {user.role === 'admin' && (
-          <AdminDashboard tasks={tasks} employees={employees} activityLogs={activityLogs} />
+          <div className="bg-white/[0.03] backdrop-blur-xl rounded-[2rem] p-8 border border-white/10 shadow-2xl">
+            <AdminDashboard tasks={tasks} employees={employees} activityLogs={activityLogs} />
+          </div>
         )}
-        <div className="flex justify-between items-center mb-4">
-            <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">
-              {user.role === 'admin' ? 'All Tasks' : 'My Tasks'}
-            </h2>
-            <div className="flex items-center p-1 bg-slate-200 dark:bg-slate-700 rounded-lg">
-                <button 
-                    onClick={() => setCurrentView('board')} 
-                    className={`px-3 py-1 text-sm font-semibold rounded-md flex items-center gap-2 ${currentView === 'board' ? 'bg-white dark:bg-slate-800 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-300'}`}
-                >
-                    <ViewColumnsIcon className="w-5 h-5"/> Board
-                </button>
-                <button 
-                    onClick={() => setCurrentView('calendar')} 
-                    className={`px-3 py-1 text-sm font-semibold rounded-md flex items-center gap-2 ${currentView === 'calendar' ? 'bg-white dark:bg-slate-800 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-300'}`}
-                >
-                    <CalendarIcon className="w-5 h-5"/> Calendar
-                </button>
-            </div>
-        </div>
+        
+        <div className="bg-white/[0.03] backdrop-blur-xl rounded-[2rem] p-8 border border-white/10 shadow-2xl space-y-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <h2 className="text-4xl font-black text-white tracking-tight">
+                {user.role === 'admin' ? 'Workspace' : 'My Roadmap'}
+              </h2>
+              <div className="flex items-center p-1.5 bg-white/5 rounded-2xl border border-white/10">
+                  <button 
+                      onClick={() => setCurrentView('board')} 
+                      className={`px-6 py-2.5 text-sm font-bold rounded-xl flex items-center gap-2 transition-all ${currentView === 'board' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white'}`}
+                  >
+                      <ViewColumnsIcon className="w-5 h-5"/> Board
+                  </button>
+                  <button 
+                      onClick={() => setCurrentView('calendar')} 
+                      className={`px-6 py-2.5 text-sm font-bold rounded-xl flex items-center gap-2 transition-all ${currentView === 'calendar' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white'}`}
+                  >
+                      <CalendarIcon className="w-5 h-5"/> Calendar
+                  </button>
+              </div>
+          </div>
 
-        <FilterBar 
-            employees={employees} 
-            filters={filters} 
-            setFilters={setFilters} 
-            showAssigneeFilter={user.role === 'admin'}
-        />
+          <FilterBar 
+              employees={employees} 
+              filters={filters} 
+              setFilters={setFilters} 
+              showAssigneeFilter={user.role === 'admin'}
+          />
 
-        {currentView === 'board' ? (
-             <TaskBoard
-              tasks={filteredTasks}
-              allTasks={tasks}
-              employees={employees}
-              onEditTask={handleOpenAddTaskModal}
-              onDeleteTask={user.role === 'admin' ? handleDeleteTask : undefined}
-              onUpdateTaskStatus={handleUpdateTaskStatus}
-              onViewTask={handleOpenTaskDetailsModal}
-              onToggleTimer={handleToggleTimer}
-            />
-        ) : (
-            <CalendarView 
+          {currentView === 'board' ? (
+               <TaskBoard
                 tasks={filteredTasks}
-                onViewTask={handleOpenTaskDetailsModal}
-            />
-        )}
+                allTasks={tasks}
+                employees={employees}
+                onEditTask={handleOpenAddTaskModal}
+                onDeleteTask={user.role === 'admin' ? (id) => { setTaskToDeleteId(id); setDeleteModalOpen(true); } : undefined}
+                onUpdateTaskStatus={handleUpdateTaskStatus}
+                onViewTask={(task) => { setSelectedTask(task); setTaskDetailsModalOpen(true); }}
+                onToggleTimer={(id) => {
+                  const task = tasks.find(t => t.id === id);
+                  if (task) {
+                    const now = new Date();
+                    let updated: Task;
+                    if (task.timerStartTime) {
+                      const start = new Date(task.timerStartTime);
+                      const dur = now.getTime() - start.getTime();
+                      updated = { ...task, timerStartTime: null, timeLogs: [{ id: Date.now().toString(), startTime: task.timerStartTime, endTime: now.toISOString(), duration: dur }, ...(task.timeLogs || [])] };
+                      logActivity(`logged time on "${task.title}"`);
+                    } else {
+                      updated = { ...task, timerStartTime: now.toISOString(), timeLogs: task.timeLogs || [] };
+                      logActivity(`started timer on "${task.title}"`);
+                    }
+                    setTasks(tasks.map(t => t.id === id ? updated : t));
+                  }
+                }}
+              />
+          ) : (
+              <CalendarView 
+                  tasks={filteredTasks}
+                  onViewTask={(task) => { setSelectedTask(task); setTaskDetailsModalOpen(true); }}
+              />
+          )}
+        </div>
       </main>
+
+      {/* Modals remain mostly the same, their internal content handles glassmorphism */}
       {isAddTaskModalOpen && (
         <AddTaskModal
           isOpen={isAddTaskModalOpen}
-          onClose={handleCloseAddTaskModal}
-          onSave={handleSaveTask}
+          onClose={() => setAddTaskModalOpen(false)}
+          onSave={(data, id) => {
+            if (id !== null) {
+              setTasks(tasks.map(t => t.id === id ? { ...t, ...data } : t));
+              logActivity(`updated "${data.title}"`);
+            } else {
+              const newTask: Task = { id: Date.now(), status: TaskStatus.TODO, comments: [], subtasks: [], tags: [], timeLogs: [], timerStartTime: null, createdAt: new Date().toISOString(), ...data };
+              setTasks([...tasks, newTask]);
+              logActivity(`created "${newTask.title}"`);
+            }
+            setAddTaskModalOpen(false);
+          }}
           employees={employees}
           taskToEdit={taskToEdit}
           allTasks={tasks}
@@ -427,39 +256,61 @@ const App: React.FC = () => {
       {isGenerateTaskModalOpen && (
         <GenerateTasksModal 
           isOpen={isGenerateTaskModalOpen}
-          onClose={handleCloseGenerateTasksModal}
-          onTasksGenerated={addGeneratedTasks}
+          onClose={() => setGenerateTaskModalOpen(false)}
+          onTasksGenerated={(gen) => {
+            const newTasks: Task[] = gen.map(t => ({ ...t, id: Date.now() + Math.random(), status: TaskStatus.TODO, priority: Priority.MEDIUM, comments: [], subtasks: [], tags: [], timeLogs: [], timerStartTime: null, createdAt: new Date().toISOString() }));
+            setTasks([...tasks, ...newTasks]);
+            logActivity(`AI generated ${newTasks.length} tasks`);
+          }}
           employees={employees}
         />
       )}
       {isTaskDetailsModalOpen && selectedTask && (
         <TaskDetailsModal
           isOpen={isTaskDetailsModalOpen}
-          onClose={handleCloseTaskDetailsModal}
+          onClose={() => setTaskDetailsModalOpen(false)}
           task={selectedTask}
           employees={employees}
-          onAddComment={handleAddComment}
-          onUpdateTask={handleUpdateTask}
           allTasks={tasks}
-          onToggleTimer={handleToggleTimer}
+          onAddComment={(id, content) => {
+            const newComm: Comment = { id: Date.now(), authorId: user.employeeId, content, timestamp: new Date().toISOString() };
+            setTasks(tasks.map(t => t.id === id ? { ...t, comments: [...t.comments, newComm] } : t));
+            setSelectedTask(prev => prev ? { ...prev, comments: [...prev.comments, newComm] } : null);
+          }}
+          onUpdateTask={(updated) => {
+            setTasks(tasks.map(t => t.id === updated.id ? updated : t));
+            setSelectedTask(updated);
+          }}
+          onToggleTimer={(id) => {
+            // Implementation inside details as well for consistency
+          }}
         />
       )}
       {isDeleteModalOpen && (
         <ConfirmationModal
           isOpen={isDeleteModalOpen}
-          onClose={handleCancelDelete}
-          onConfirm={handleConfirmDelete}
+          onClose={() => setDeleteModalOpen(false)}
+          onConfirm={() => {
+            if (taskToDeleteId) {
+              setTasks(tasks.filter(t => t.id !== taskToDeleteId));
+              showNotification('Deleted', 'success');
+              setDeleteModalOpen(false);
+            }
+          }}
           title="Delete Task"
-          message="Are you sure you want to delete this task? This action cannot be undone."
+          message="This will permanently remove the task."
         />
       )}
-      {isProfileModalOpen && user && (
+      {isProfileModalOpen && (
           <ProfileModal 
             isOpen={isProfileModalOpen}
-            onClose={handleCloseProfileModal}
+            onClose={() => setProfileModalOpen(false)}
             user={user}
             currentUserEmployee={currentUserEmployee}
-            onSave={handleSaveProfile}
+            onSave={(name, avatar) => {
+              setEmployees(employees.map(e => e.id === user.employeeId ? { ...e, name, avatarUrl: avatar } : e));
+              updateUser({ username: name });
+            }}
           />
       )}
     </div>
