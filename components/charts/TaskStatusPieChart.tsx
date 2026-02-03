@@ -24,7 +24,7 @@ const TaskStatusPieChart: React.FC<TaskStatusPieChartProps> = ({ tasks }) => {
   if (totalTasks === 0) {
     return (
         <div className="flex flex-col items-center justify-center h-full text-slate-500 text-xs">
-            <div className="w-32 h-32 rounded-full border-4 border-slate-800 mb-2 opacity-50"></div>
+            <div className="w-32 h-32 rounded-full border-4 border-slate-200 dark:border-slate-800 mb-2 opacity-50"></div>
             No task data available
         </div>
     );
@@ -69,13 +69,13 @@ const TaskStatusPieChart: React.FC<TaskStatusPieChartProps> = ({ tasks }) => {
                 key={segment.status} 
                 d={segment.path} 
                 fill={segment.color} 
-                className="hover:opacity-80 transition-opacity cursor-pointer stroke-slate-900 stroke-2"
+                className="hover:opacity-80 transition-opacity cursor-pointer stroke-slate-50 dark:stroke-slate-900 stroke-2"
             />
           ))}
         </svg>
         {/* Center Text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-3xl font-black text-white">{totalTasks}</span>
+            <span className="text-3xl font-black text-slate-800 dark:text-white">{totalTasks}</span>
             <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Tasks</span>
         </div>
       </div>
@@ -85,11 +85,11 @@ const TaskStatusPieChart: React.FC<TaskStatusPieChartProps> = ({ tasks }) => {
           <div key={segment.status} className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full" style={{ backgroundColor: segment.color }}></span>
-                <span className="text-slate-300 font-medium">{statusConfig[segment.status as TaskStatus].name}</span>
+                <span className="text-slate-600 dark:text-slate-300 font-medium">{statusConfig[segment.status as TaskStatus].name}</span>
             </div>
             <div className="flex gap-3">
                 <span className="text-slate-500">{segment.percentage}%</span>
-                <span className="text-white font-bold w-4 text-right">{segment.count}</span>
+                <span className="text-slate-800 dark:text-white font-bold w-4 text-right">{segment.count}</span>
             </div>
           </div>
         ))}

@@ -17,9 +17,9 @@ interface TaskColumnProps {
 }
 
 const statusConfig = {
-  [TaskStatus.TODO]: { border: 'border-orange-500/50', text: 'text-orange-400', bg: 'bg-orange-500/10' },
-  [TaskStatus.IN_PROGRESS]: { border: 'border-indigo-500/50', text: 'text-indigo-400', bg: 'bg-indigo-500/10' },
-  [TaskStatus.DONE]: { border: 'border-emerald-500/50', text: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+  [TaskStatus.TODO]: { border: 'border-orange-500/50', text: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-500/10' },
+  [TaskStatus.IN_PROGRESS]: { border: 'border-indigo-500/50', text: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-500/10' },
+  [TaskStatus.DONE]: { border: 'border-emerald-500/50', text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10' },
 };
 
 const TaskColumn: React.FC<TaskColumnProps> = ({ status, tasks, allTasks, employees, onEditTask, onDeleteTask, onUpdateTaskStatus, onViewTask, onToggleTimer }) => {
@@ -53,16 +53,16 @@ const TaskColumn: React.FC<TaskColumnProps> = ({ status, tasks, allTasks, employ
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`flex flex-col h-full rounded-2xl transition-colors ${isOver ? 'bg-white/5 ring-2 ring-indigo-500/50' : 'bg-transparent'}`}
+      className={`flex flex-col h-full rounded-2xl transition-colors ${isOver ? 'bg-indigo-50 dark:bg-white/5 ring-2 ring-indigo-500/50' : 'bg-transparent'}`}
     >
       {/* Header */}
-      <div className={`flex items-center justify-between p-3 mb-2 rounded-xl border border-white/5 bg-slate-900/40 backdrop-blur-sm`}>
+      <div className={`flex items-center justify-between p-3 mb-2 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/80 dark:bg-slate-900/40 backdrop-blur-sm`}>
           <div className="flex items-center gap-2">
             <span className={`text-xs font-bold uppercase tracking-wider ${config.text}`}>{status}</span>
-            <span className="bg-white/10 text-slate-300 rounded px-1.5 py-0.5 text-xs font-mono">{tasks.length}</span>
+            <span className="bg-white dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded px-1.5 py-0.5 text-xs font-mono shadow-sm">{tasks.length}</span>
           </div>
           <div className="flex gap-1">
-              <button className="p-1 hover:bg-white/10 rounded text-slate-500 hover:text-white transition-colors">
+              <button className="p-1 hover:bg-white/50 dark:hover:bg-white/10 rounded text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-white transition-colors">
                   <PlusIcon className="w-4 h-4" />
               </button>
           </div>
@@ -84,7 +84,7 @@ const TaskColumn: React.FC<TaskColumnProps> = ({ status, tasks, allTasks, employ
           />
         ))}
         {tasks.length === 0 && (
-          <div className="h-24 border-2 border-dashed border-white/5 rounded-xl flex items-center justify-center text-slate-600 text-sm">
+          <div className="h-24 border-2 border-dashed border-slate-200 dark:border-white/5 rounded-xl flex items-center justify-center text-slate-400 dark:text-slate-600 text-sm">
             No tasks
           </div>
         )}

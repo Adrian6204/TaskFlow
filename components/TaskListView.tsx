@@ -24,10 +24,10 @@ const statusColors = {
 };
 
 const priorityColors = {
-  [Priority.URGENT]: 'text-red-400 bg-red-400/10',
-  [Priority.HIGH]: 'text-orange-400 bg-orange-400/10',
-  [Priority.MEDIUM]: 'text-indigo-400 bg-indigo-400/10',
-  [Priority.LOW]: 'text-slate-400 bg-slate-400/10',
+  [Priority.URGENT]: 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-400/10',
+  [Priority.HIGH]: 'text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-400/10',
+  [Priority.MEDIUM]: 'text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-400/10',
+  [Priority.LOW]: 'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-400/10',
 };
 
 const TaskGroup: React.FC<{
@@ -55,14 +55,14 @@ const TaskGroup: React.FC<{
         <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider text-white ${statusColors[status]}`}>
             {status}
         </span>
-        <span className="text-slate-500 text-sm font-medium">{tasks.length}</span>
-        <div className="h-px bg-white/10 flex-grow ml-2 group-hover:bg-white/20 transition-colors"></div>
+        <span className="text-slate-600 dark:text-slate-500 text-sm font-medium">{tasks.length}</span>
+        <div className="h-px bg-slate-200 dark:bg-white/10 flex-grow ml-2 group-hover:bg-slate-300 dark:group-hover:bg-white/20 transition-colors"></div>
       </div>
 
       {!isCollapsed && (
-        <div className="bg-slate-900/40 border border-white/5 rounded-xl overflow-hidden backdrop-blur-sm">
+        <div className="bg-white/50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-xl overflow-hidden backdrop-blur-sm shadow-sm dark:shadow-none">
             {/* Table Header */}
-            <div className="grid grid-cols-[1fr_120px_120px_120px_100px] gap-4 px-4 py-2 border-b border-white/5 text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <div className="grid grid-cols-[1fr_120px_120px_120px_100px] gap-4 px-4 py-2 border-b border-slate-200 dark:border-white/5 text-xs font-bold text-slate-500 uppercase tracking-wider">
                 <div>Name</div>
                 <div>Assignee</div>
                 <div>Due Date</div>
@@ -81,13 +81,13 @@ const TaskGroup: React.FC<{
                         <div 
                             key={task.id}
                             onClick={() => onViewTask(task)}
-                            className="grid grid-cols-[1fr_120px_120px_120px_100px] gap-4 px-4 py-3 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors cursor-pointer group items-center"
+                            className="grid grid-cols-[1fr_120px_120px_120px_100px] gap-4 px-4 py-3 border-b border-slate-100 dark:border-white/5 last:border-0 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer group items-center"
                         >
                             {/* Title Column */}
                             <div className="min-w-0">
                                 <div className="flex items-center gap-3">
                                     <div className={`w-1.5 h-1.5 rounded-full ${statusColors[status]}`}></div>
-                                    <span className="text-sm font-medium text-slate-200 truncate group-hover:text-indigo-400 transition-colors">
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                                         {task.title}
                                     </span>
                                 </div>
@@ -104,16 +104,16 @@ const TaskGroup: React.FC<{
                             <div className="flex items-center">
                                 {assignee ? (
                                     <div className="flex items-center gap-2" title={assignee.name}>
-                                        <img src={assignee.avatarUrl} className="w-6 h-6 rounded-full border border-white/10" />
-                                        <span className="text-xs text-slate-400 truncate">{assignee.name.split(' ')[0]}</span>
+                                        <img src={assignee.avatarUrl} className="w-6 h-6 rounded-full border border-slate-200 dark:border-white/10" />
+                                        <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{assignee.name.split(' ')[0]}</span>
                                     </div>
                                 ) : (
-                                    <span className="text-xs text-slate-600 italic">Unassigned</span>
+                                    <span className="text-xs text-slate-400 dark:text-slate-600 italic">Unassigned</span>
                                 )}
                             </div>
 
                             {/* Due Date */}
-                            <div className={`text-xs ${isOverdue ? 'text-red-400 font-bold' : 'text-slate-400'}`}>
+                            <div className={`text-xs ${isOverdue ? 'text-red-500 dark:text-red-400 font-bold' : 'text-slate-500 dark:text-slate-400'}`}>
                                 {new Date(task.dueDate).toLocaleDateString()}
                             </div>
 
@@ -128,7 +128,7 @@ const TaskGroup: React.FC<{
                             <div className="flex justify-end">
                                 <button
                                     onClick={(e) => { e.stopPropagation(); onToggleTimer(task.id); }}
-                                    className={`p-1.5 rounded-md transition-all ${isTracking ? 'bg-red-500/20 text-red-400' : 'text-slate-500 hover:text-indigo-400 hover:bg-white/5 opacity-0 group-hover:opacity-100'}`}
+                                    className={`p-1.5 rounded-md transition-all ${isTracking ? 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400' : 'text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-200 dark:hover:bg-white/5 opacity-0 group-hover:opacity-100'}`}
                                 >
                                     {isTracking ? <StopIcon className="w-4 h-4" /> : <PlayIcon className="w-4 h-4" />}
                                 </button>

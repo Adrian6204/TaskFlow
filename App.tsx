@@ -165,7 +165,7 @@ const App: React.FC = () => {
   if (!user) return <LoginPage />;
 
   return (
-    <div className="flex h-screen overflow-hidden text-slate-100">
+    <div className="flex h-screen overflow-hidden text-slate-900 dark:text-slate-100 transition-colors duration-300">
       {/* Sidebar */}
       <Sidebar 
         isOpen={isSidebarOpen} 
@@ -194,7 +194,7 @@ const App: React.FC = () => {
           user={user}
         />
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-white/10 scrollbar-track-transparent">
           <div className="max-w-[1600px] mx-auto animate-in fade-in duration-500">
             
             {/* View Switching */}

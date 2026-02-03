@@ -33,7 +33,7 @@ const TaskPriorityBarChart: React.FC<TaskPriorityBarChartProps> = ({ tasks }) =>
             <span>{config.label}</span>
             <span>{config.count}</span>
           </div>
-          <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
             <div 
                 className={`h-full rounded-full ${config.color} transition-all duration-500`} 
                 style={{ width: `${(config.count / maxCount) * 100}%` }}

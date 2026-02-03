@@ -19,9 +19,9 @@ interface AdminDashboardProps {
 
 // Reusable Dashboard Card Component
 const DashboardCard: React.FC<{ title: string; children: React.ReactNode; className?: string; action?: React.ReactNode }> = ({ title, children, className = '', action }) => (
-  <div className={`bg-slate-900/40 backdrop-blur-md border border-white/5 rounded-2xl p-6 flex flex-col ${className}`}>
+  <div className={`bg-white/60 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-2xl p-6 flex flex-col shadow-sm dark:shadow-none ${className}`}>
     <div className="flex justify-between items-center mb-6">
-        <h3 className="text-sm font-bold text-slate-300 uppercase tracking-widest">{title}</h3>
+        <h3 className="text-sm font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">{title}</h3>
         {action}
     </div>
     <div className="flex-1 min-h-0">
@@ -31,18 +31,23 @@ const DashboardCard: React.FC<{ title: string; children: React.ReactNode; classN
 );
 
 // Metric Component
-const MetricItem: React.FC<{ label: string; value: string | number; trend?: string; icon?: React.ReactNode; color?: string }> = ({ label, value, trend, icon, color = 'text-white' }) => (
-    <div className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between group hover:bg-white/10 transition-colors">
-        <div>
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">{label}</p>
-            <div className="flex items-baseline gap-2">
-                <span className={`text-2xl font-black ${color}`}>{value}</span>
-                {trend && <span className="text-xs font-medium text-emerald-400">{trend}</span>}
+const MetricItem: React.FC<{ label: string; value: string | number; trend?: string; icon?: React.ReactNode; color?: string }> = ({ label, value, trend, icon, color }) => {
+    // Determine default color based on context if not provided
+    const valueColor = color || 'text-slate-900 dark:text-white';
+    
+    return (
+        <div className="p-4 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-white/10 transition-colors shadow-sm dark:shadow-none">
+            <div>
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">{label}</p>
+                <div className="flex items-baseline gap-2">
+                    <span className={`text-2xl font-black ${valueColor}`}>{value}</span>
+                    {trend && <span className="text-xs font-medium text-emerald-500 dark:text-emerald-400">{trend}</span>}
+                </div>
             </div>
+            {icon && <div className="p-3 bg-slate-100 dark:bg-white/5 rounded-lg text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-white transition-colors">{icon}</div>}
         </div>
-        {icon && <div className="p-3 bg-white/5 rounded-lg text-slate-400 group-hover:text-white transition-colors">{icon}</div>}
-    </div>
-);
+    );
+};
 
 const getRelativeTime = (timestamp: string) => {
     const now = new Date();
@@ -87,12 +92,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ tasks, employees, activ
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
           <div>
-            <h2 className="text-3xl font-black text-white mb-2 tracking-tight">Executive Dashboard</h2>
-            <p className="text-slate-400">Real-time insights into project velocity and team performance.</p>
+            <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Executive Dashboard</h2>
+            <p className="text-slate-500 dark:text-slate-400">Real-time insights into project velocity and team performance.</p>
           </div>
           <div className="text-right hidden md:block">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Current Date</p>
-              <p className="text-white font-mono">{new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Current Date</p>
+              <p className="text-slate-700 dark:text-white font-mono">{new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
           </div>
       </div>
 
@@ -107,13 +112,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ tasks, employees, activ
             label="Completion Rate" 
             value={`${completionRate}%`} 
             icon={<CheckCircleIcon className="w-6 h-6"/>}
-            color={completionRate > 80 ? 'text-emerald-400' : 'text-indigo-400'}
+            color={completionRate > 80 ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'}
         />
         <MetricItem 
             label="Overdue" 
             value={overdueTasks.length} 
             icon={<ClockIcon className="w-6 h-6"/>}
-            color={overdueTasks.length > 0 ? 'text-red-400' : 'text-slate-200'}
+            color={overdueTasks.length > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-400 dark:text-slate-200'}
         />
         <MetricItem 
             label="Avg Turnaround" 
@@ -141,22 +146,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ tasks, employees, activ
             </DashboardCard>
 
             {/* AI Summary Section */}
-            <div className="bg-gradient-to-br from-indigo-900/40 to-slate-900/40 border border-indigo-500/20 rounded-2xl p-6 relative overflow-hidden group">
+            <div className="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-900/40 dark:to-slate-900/40 border border-indigo-200 dark:border-indigo-500/20 rounded-2xl p-6 relative overflow-hidden group shadow-sm dark:shadow-none">
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <SparklesIcon className="w-32 h-32 text-indigo-400" />
                 </div>
                 
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-indigo-500/20 rounded-lg">
-                            <SparklesIcon className="w-5 h-5 text-indigo-400" />
+                        <div className="p-2 bg-indigo-100 dark:bg-indigo-500/20 rounded-lg">
+                            <SparklesIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                         </div>
-                        <h3 className="text-lg font-bold text-white">AI Executive Summary</h3>
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">AI Executive Summary</h3>
                     </div>
                     
                     {!summary ? (
                          <div className="text-center py-8">
-                            <p className="text-slate-400 mb-4 text-sm">Generate a comprehensive natural-language report of this week's progress.</p>
+                            <p className="text-slate-500 dark:text-slate-400 mb-4 text-sm">Generate a comprehensive natural-language report of this week's progress.</p>
                             <button 
                                 onClick={handleGenerateSummary}
                                 disabled={isSummaryLoading}
@@ -166,13 +171,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ tasks, employees, activ
                             </button>
                         </div>
                     ) : (
-                        <div className="prose prose-invert prose-sm max-w-none">
-                            <div className="whitespace-pre-wrap text-slate-300 leading-relaxed bg-black/20 p-4 rounded-xl border border-white/5">
+                        <div className="prose prose-sm max-w-none">
+                            <div className="whitespace-pre-wrap text-slate-700 dark:text-slate-300 leading-relaxed bg-white/50 dark:bg-black/20 p-4 rounded-xl border border-slate-200 dark:border-white/5">
                                 {summary}
                             </div>
                             <button 
                                 onClick={() => setSummary('')} 
-                                className="mt-4 text-xs text-indigo-400 hover:text-white font-bold uppercase tracking-wider"
+                                className="mt-4 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-white font-bold uppercase tracking-wider"
                             >
                                 Clear Summary
                             </button>
@@ -189,23 +194,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ tasks, employees, activ
             </DashboardCard>
 
             <DashboardCard title="Recent Activity" className="flex-1 min-h-[400px]">
-                <div className="space-y-4 overflow-y-auto pr-2 max-h-[400px] scrollbar-thin scrollbar-thumb-white/10">
+                <div className="space-y-4 overflow-y-auto pr-2 max-h-[400px] scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-white/10">
                     {activityLogs.slice(0, 15).map((log) => (
                         <div key={log.id} className="flex gap-3 items-start group">
-                            <img src={log.user.avatarUrl} alt="" className="w-8 h-8 rounded-lg border border-white/10 mt-1" />
+                            <img src={log.user.avatarUrl} alt="" className="w-8 h-8 rounded-lg border border-slate-200 dark:border-white/10 mt-1" />
                             <div>
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-sm font-bold text-slate-200">{log.user.name}</span>
-                                    <span className="text-[10px] text-slate-500 font-mono">{getRelativeTime(log.timestamp)}</span>
+                                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{log.user.name}</span>
+                                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{getRelativeTime(log.timestamp)}</span>
                                 </div>
-                                <p className="text-xs text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors">
+                                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">
                                     {log.message}
                                 </p>
                             </div>
                         </div>
                     ))}
                     {activityLogs.length === 0 && (
-                        <div className="text-center py-10 text-slate-600 italic text-sm">No activity recorded yet.</div>
+                        <div className="text-center py-10 text-slate-500 dark:text-slate-600 italic text-sm">No activity recorded yet.</div>
                     )}
                 </div>
             </DashboardCard>

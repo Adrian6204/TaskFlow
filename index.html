@@ -7,16 +7,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TaskFlow</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Manrope', 'sans-serif'],
+            },
+          }
+        }
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap" rel="stylesheet">
     <style>
+      :root {
+        --bg-color: #ffffff;
+        --orb-1: radial-gradient(circle, #e0e7ff 0%, transparent 70%); /* Light Indigo */
+        --orb-2: radial-gradient(circle, #ede9fe 0%, transparent 70%); /* Light Violet */
+        --orb-3: radial-gradient(circle, #dbeafe 0%, transparent 70%); /* Light Blue */
+        --glass-shard-bg: rgba(255, 255, 255, 0.4);
+        --glass-shard-border: rgba(255, 255, 255, 0.3);
+        --bg-gradient: radial-gradient(circle at 50% 50%, #ffffff 0%, #f1f5f9 100%);
+      }
+
+      .dark {
+        --bg-color: #020617;
+        --orb-1: radial-gradient(circle, #4f46e5 0%, transparent 70%);
+        --orb-2: radial-gradient(circle, #7c3aed 0%, transparent 70%);
+        --orb-3: radial-gradient(circle, #2563eb 0%, transparent 70%);
+        --glass-shard-bg: rgba(255, 255, 255, 0.03);
+        --glass-shard-border: rgba(255, 255, 255, 0.05);
+        --bg-gradient: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+      }
+
       html, body {
         font-family: 'Manrope', sans-serif;
         margin: 0;
         padding: 0;
         min-height: 100vh;
-        background-color: #020617; /* slate-950 */
+        background-color: var(--bg-color);
+        transition: background-color 0.5s ease;
       }
       
       body {
@@ -29,23 +62,28 @@
         position: fixed;
         inset: 0;
         z-index: -1;
-        background: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+        background: var(--bg-gradient);
         overflow: hidden;
+        transition: background 0.5s ease;
       }
 
       .bg-orb {
         position: absolute;
         border-radius: 50%;
-        filter: blur(100px);
-        opacity: 0.4;
-        mix-blend-mode: screen;
+        filter: blur(80px);
+        opacity: 0.6;
         animation: drift 25s infinite alternate ease-in-out;
+        transition: background 0.5s ease, opacity 0.5s ease;
       }
+      
+      /* In light mode, multiply or normal blend works better. Screen is for dark. */
+      .bg-orb { mix-blend-mode: normal; }
+      .dark .bg-orb { mix-blend-mode: screen; opacity: 0.4; filter: blur(100px); }
 
       .orb-1 {
         width: 600px;
         height: 600px;
-        background: radial-gradient(circle, #4f46e5 0%, transparent 70%);
+        background: var(--orb-1);
         top: -10%;
         left: -10%;
         animation-duration: 30s;
@@ -54,7 +92,7 @@
       .orb-2 {
         width: 800px;
         height: 800px;
-        background: radial-gradient(circle, #7c3aed 0%, transparent 70%);
+        background: var(--orb-2);
         bottom: -20%;
         right: -10%;
         animation-duration: 45s;
@@ -64,7 +102,7 @@
       .orb-3 {
         width: 500px;
         height: 500px;
-        background: radial-gradient(circle, #2563eb 0%, transparent 70%);
+        background: var(--orb-3);
         top: 30%;
         right: 10%;
         animation-duration: 35s;
@@ -74,12 +112,13 @@
       /* Floating Glass Panels (Atmospheric) */
       .glass-shard {
         position: absolute;
-        background: rgba(255, 255, 255, 0.03);
+        background: var(--glass-shard-bg);
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--glass-shard-border);
         transform: rotate(45deg);
         z-index: -1;
         animation: float-shards 20s infinite linear;
+        transition: background 0.5s ease, border-color 0.5s ease;
       }
 
       @keyframes drift {
@@ -105,7 +144,7 @@
 
       /* Apply smooth transitions */
       * {
-        transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, transform;
+        transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, transform, box-shadow;
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         transition-duration: 300ms;
       }
@@ -118,18 +157,30 @@
         background: transparent;
       }
       ::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(148, 163, 184, 0.5);
         border-radius: 10px;
       }
+      .dark ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+      }
       ::-webkit-scrollbar-thumb:hover {
+        background: rgba(148, 163, 184, 0.8);
+      }
+      .dark ::-webkit-scrollbar-thumb:hover {
         background: rgba(255, 255, 255, 0.2);
       }
     </style>
     <script>
-      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      // Force light mode check on load
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
         document.documentElement.classList.add('dark');
       } else {
         document.documentElement.classList.remove('dark');
+        // Ensure localStorage defaults to something so we don't fall back to system prefs if JS checks it later
+        if (!savedTheme) {
+            localStorage.setItem('theme', 'light');
+        }
       }
     </script>
     <script type="importmap">
@@ -143,7 +194,7 @@
     }
     </script>
   </head>
-  <body class="bg-slate-950 text-slate-100 selection:bg-indigo-500/30">
+  <body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-indigo-500/30">
     <!-- Cinematic Background Container -->
     <div class="bg-cinematic">
       <div class="bg-orb orb-1"></div>

@@ -40,7 +40,7 @@ const CompletionHistoryChart: React.FC<CompletionHistoryChartProps> = ({ tasks }
         {/* Grid Lines */}
         <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
           {[0, 0.5, 1].map((tick) => (
-             <div key={tick} className="border-b border-white/5 w-full h-px"></div>
+             <div key={tick} className="border-b border-slate-200 dark:border-white/5 w-full h-px"></div>
           ))}
         </div>
 
@@ -72,7 +72,7 @@ const CompletionHistoryChart: React.FC<CompletionHistoryChartProps> = ({ tasks }
                 cx={`${(i / (data.length - 1)) * 100}%`}
                 cy={`${100 - (d.count / maxVal) * 100}%`}
                 r="3"
-                className="fill-indigo-500 stroke-slate-900 stroke-2"
+                className="fill-indigo-500 stroke-white dark:stroke-slate-900 stroke-2"
              />
           ))}
         </svg>
