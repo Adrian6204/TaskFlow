@@ -18,7 +18,7 @@ import ConfirmationModal from './components/ConfirmationModal';
 import ProfileModal from './components/ProfileModal';
 
 const App: React.FC = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const { showNotification } = useNotification();
   
   // Data State
@@ -176,6 +176,7 @@ const App: React.FC = () => {
         }}
         onToggle={() => setSidebarOpen(!isSidebarOpen)}
         onOpenProfile={() => setProfileModalOpen(true)}
+        onLogout={logout}
         currentUserEmployee={currentUserEmployee}
         user={user}
       />
@@ -316,6 +317,10 @@ const App: React.FC = () => {
             onSave={(name, avatar) => {
               setEmployees(employees.map(e => e.id === user.employeeId ? { ...e, name, avatarUrl: avatar } : e));
               updateUser({ username: name });
+            }}
+            onLogout={() => {
+              setProfileModalOpen(false);
+              logout();
             }}
           />
       )}

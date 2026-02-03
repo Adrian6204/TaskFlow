@@ -3,6 +3,7 @@ import React from 'react';
 import { User, Employee } from '../types';
 import { ViewColumnsIcon } from './icons/ViewColumnsIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
+import { LogoutIcon } from './icons/LogoutIcon';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface SidebarProps {
   onSelectSpace: (space: string) => void;
   onToggle: () => void;
   onOpenProfile: () => void;
+  onLogout: () => void;
   currentUserEmployee?: Employee;
   user: User;
 }
@@ -22,6 +24,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSelectSpace, 
   onToggle,
   onOpenProfile,
+  onLogout,
   currentUserEmployee,
   user
 }) => {
@@ -70,12 +73,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* User Footer */}
-      <div className="p-4 border-t border-white/5">
+      <div className="p-4 border-t border-white/5 flex items-center gap-2">
         <button 
           onClick={onOpenProfile}
-          className={`flex items-center gap-3 w-full p-2 rounded-xl hover:bg-white/5 transition-colors ${!isOpen && 'justify-center'}`}
+          className={`flex items-center gap-3 flex-1 p-2 rounded-xl hover:bg-white/5 transition-colors ${!isOpen && 'justify-center'}`}
         >
-           <div className="relative">
+           <div className="relative flex-shrink-0">
                 <img 
                     src={currentUserEmployee?.avatarUrl} 
                     alt="" 
@@ -90,6 +93,16 @@ const Sidebar: React.FC<SidebarProps> = ({
               </div>
             )}
         </button>
+        
+        {isOpen && (
+          <button
+            onClick={onLogout}
+            className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+            title="Log Out"
+          >
+            <LogoutIcon className="w-5 h-5" />
+          </button>
+        )}
       </div>
     </aside>
   );
