@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Task, Employee, TaskStatus } from '../types';
 import TaskCard from './TaskCard';
+import { PlusIcon } from './icons/PlusIcon';
 
 interface TaskColumnProps {
   status: TaskStatus;
@@ -16,21 +17,9 @@ interface TaskColumnProps {
 }
 
 const statusConfig = {
-  [TaskStatus.TODO]: {
-    color: 'bg-orange-500',
-    textColor: 'text-orange-600 dark:text-orange-400',
-    title: 'To Do',
-  },
-  [TaskStatus.IN_PROGRESS]: {
-    color: 'bg-indigo-500',
-    textColor: 'text-indigo-600 dark:text-indigo-400',
-    title: 'In Progress',
-  },
-  [TaskStatus.DONE]: {
-    color: 'bg-emerald-500',
-    textColor: 'text-emerald-600 dark:text-emerald-400',
-    title: 'Done',
-  },
+  [TaskStatus.TODO]: { border: 'border-orange-500/50', text: 'text-orange-400', bg: 'bg-orange-500/10' },
+  [TaskStatus.IN_PROGRESS]: { border: 'border-indigo-500/50', text: 'text-indigo-400', bg: 'bg-indigo-500/10' },
+  [TaskStatus.DONE]: { border: 'border-emerald-500/50', text: 'text-emerald-400', bg: 'bg-emerald-500/10' },
 };
 
 const TaskColumn: React.FC<TaskColumnProps> = ({ status, tasks, allTasks, employees, onEditTask, onDeleteTask, onUpdateTaskStatus, onViewTask, onToggleTimer }) => {
@@ -64,14 +53,23 @@ const TaskColumn: React.FC<TaskColumnProps> = ({ status, tasks, allTasks, employ
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`bg-slate-100/50 dark:bg-slate-800/60 rounded-xl p-4 flex flex-col border border-slate-200 dark:border-slate-700/50 ${isOver ? 'bg-slate-200 dark:bg-slate-700/80 border-indigo-500' : ''}`}
+      className={`flex flex-col h-full rounded-2xl transition-colors ${isOver ? 'bg-white/5 ring-2 ring-indigo-500/50' : 'bg-transparent'}`}
     >
-      <div className="flex items-center mb-4">
-        <span className={`w-3 h-3 rounded-full ${config.color} mr-3`}></span>
-        <h2 className={`font-bold text-lg ${config.textColor}`}>{config.title}</h2>
-        <span className="ml-2 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full px-2 py-0.5 text-sm font-semibold">{tasks.length}</span>
+      {/* Header */}
+      <div className={`flex items-center justify-between p-3 mb-2 rounded-xl border border-white/5 bg-slate-900/40 backdrop-blur-sm`}>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-bold uppercase tracking-wider ${config.text}`}>{status}</span>
+            <span className="bg-white/10 text-slate-300 rounded px-1.5 py-0.5 text-xs font-mono">{tasks.length}</span>
+          </div>
+          <div className="flex gap-1">
+              <button className="p-1 hover:bg-white/10 rounded text-slate-500 hover:text-white transition-colors">
+                  <PlusIcon className="w-4 h-4" />
+              </button>
+          </div>
       </div>
-      <div className="flex-grow space-y-4">
+      
+      {/* Cards Area */}
+      <div className="flex-1 space-y-3 min-h-[150px]">
         {tasks.map(task => (
           <TaskCard
             key={task.id}
@@ -86,9 +84,8 @@ const TaskColumn: React.FC<TaskColumnProps> = ({ status, tasks, allTasks, employ
           />
         ))}
         {tasks.length === 0 && (
-          <div className="text-center py-10 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg">
-            <p className="text-sm text-slate-500 dark:text-slate-400">No tasks here.</p>
-             {isOver && <p className="text-sm text-indigo-500 dark:text-indigo-400 mt-1">Drop to add task</p>}
+          <div className="h-24 border-2 border-dashed border-white/5 rounded-xl flex items-center justify-center text-slate-600 text-sm">
+            No tasks
           </div>
         )}
       </div>

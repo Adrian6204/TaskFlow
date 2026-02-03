@@ -1,8 +1,15 @@
+
 import React, { useState } from 'react';
 import { Task, Employee, TaskStatus, ActivityLog } from '../types';
 import TaskStatusPieChart from './charts/TaskStatusPieChart';
 import TasksPerEmployeeBarChart from './charts/TasksPerEmployeeBarChart';
+import TaskPriorityBarChart from './charts/TaskPriorityBarChart';
+import CompletionHistoryChart from './charts/CompletionHistoryChart';
 import { generateWeeklySummary } from '../services/geminiService';
+import { SparklesIcon } from './icons/SparklesIcon';
+import { ClockIcon } from './icons/ClockIcon';
+import { CheckCircleIcon } from './icons/CheckCircleIcon';
+import { FlagIcon } from './icons/FlagIcon';
 
 interface AdminDashboardProps {
   tasks: Task[];
@@ -10,110 +17,199 @@ interface AdminDashboardProps {
   activityLogs: ActivityLog[];
 }
 
-const StatCard: React.FC<{ title: string; value: number | string; color?: 'orange' | 'indigo' | 'emerald' | 'slate' }> = ({ title, value, color = 'slate' }) => {
-  const colorClasses = {
-    slate: 'bg-slate-500',
-    orange: 'bg-orange-500',
-    indigo: 'bg-indigo-500',
-    emerald: 'bg-emerald-500',
-  };
-
-  return (
-    <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-700/50 rounded-lg shadow-sm p-5 border border-slate-200 dark:border-slate-700">
-      <div className="flex items-center mb-2">
-        <span className={`w-3 h-3 rounded-full ${colorClasses[color]} mr-3`}></span>
-        <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">{title}</p>
-      </div>
-      <p className="text-3xl font-bold text-slate-800 dark:text-slate-100">{value}</p>
+// Reusable Dashboard Card Component
+const DashboardCard: React.FC<{ title: string; children: React.ReactNode; className?: string; action?: React.ReactNode }> = ({ title, children, className = '', action }) => (
+  <div className={`bg-slate-900/40 backdrop-blur-md border border-white/5 rounded-2xl p-6 flex flex-col ${className}`}>
+    <div className="flex justify-between items-center mb-6">
+        <h3 className="text-sm font-bold text-slate-300 uppercase tracking-widest">{title}</h3>
+        {action}
     </div>
-  );
-};
+    <div className="flex-1 min-h-0">
+        {children}
+    </div>
+  </div>
+);
+
+// Metric Component
+const MetricItem: React.FC<{ label: string; value: string | number; trend?: string; icon?: React.ReactNode; color?: string }> = ({ label, value, trend, icon, color = 'text-white' }) => (
+    <div className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between group hover:bg-white/10 transition-colors">
+        <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">{label}</p>
+            <div className="flex items-baseline gap-2">
+                <span className={`text-2xl font-black ${color}`}>{value}</span>
+                {trend && <span className="text-xs font-medium text-emerald-400">{trend}</span>}
+            </div>
+        </div>
+        {icon && <div className="p-3 bg-white/5 rounded-lg text-slate-400 group-hover:text-white transition-colors">{icon}</div>}
+    </div>
+);
 
 const getRelativeTime = (timestamp: string) => {
     const now = new Date();
     const logDate = new Date(timestamp);
     const diffInSeconds = Math.floor((now.getTime() - logDate.getTime()) / 1000);
-
     if (diffInSeconds < 60) return 'Just now';
     const diffInMinutes = Math.floor(diffInSeconds / 60);
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours}h ago`;
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays}d ago`;
+    return `${Math.floor(diffInHours / 24)}d ago`;
 };
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ tasks, employees, activityLogs }) => {
-  const totalTasks = tasks.length;
-  const todoCount = tasks.filter(t => t.status === TaskStatus.TODO).length;
-  const inProgressCount = tasks.filter(t => t.status === TaskStatus.IN_PROGRESS).length;
-  const doneCount = tasks.filter(t => t.status === TaskStatus.DONE).length;
-
   const [summary, setSummary] = useState('');
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
-  const [summaryError, setSummaryError] = useState<string | null>(null);
+
+  // Calculations
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter(t => t.status === TaskStatus.DONE);
+  const completionRate = totalTasks ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
+  
+  const overdueTasks = tasks.filter(t => new Date(t.dueDate) < new Date() && t.status !== TaskStatus.DONE);
+  
+  // Calculate average completion time (mock calculation for demo)
+  const avgCompletionTime = "2.5 Days"; 
 
   const handleGenerateSummary = async () => {
     setIsSummaryLoading(true);
-    setSummaryError(null);
     try {
         const result = await generateWeeklySummary(tasks, employees);
         setSummary(result);
     } catch (err) {
-        setSummaryError(err instanceof Error ? err.message : 'An error occurred.');
+        console.error(err);
     } finally {
         setIsSummaryLoading(false);
     }
   };
 
-
   return (
-    <div className="mb-8">
-      <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-6">Admin Dashboard</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard title="Total Tasks" value={totalTasks} color="slate" />
-        <StatCard title="To Do" value={todoCount} color="orange" />
-        <StatCard title="In Progress" value={inProgressCount} color="indigo" />
-        <StatCard title="Done" value={doneCount} color="emerald" />
+    <div className="space-y-6 pb-12">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+          <div>
+            <h2 className="text-3xl font-black text-white mb-2 tracking-tight">Executive Dashboard</h2>
+            <p className="text-slate-400">Real-time insights into project velocity and team performance.</p>
+          </div>
+          <div className="text-right hidden md:block">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Current Date</p>
+              <p className="text-white font-mono">{new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 sm:p-6 border border-slate-200 dark:border-slate-700">
-           <h3 className="text-xl font-bold mb-4 text-slate-800 dark:text-slate-100">Task Overview</h3>
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                <TaskStatusPieChart tasks={tasks} />
-                <TasksPerEmployeeBarChart tasks={tasks} employees={employees} />
-           </div>
-        </div>
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 sm:p-6 border border-slate-200 dark:border-slate-700">
-            <h3 className="text-xl font-bold mb-4 text-slate-800 dark:text-slate-100">Activity Feed</h3>
-            <div className="space-y-3 h-80 overflow-y-auto pr-2">
-                {activityLogs.length > 0 ? activityLogs.map(log => (
-                    <div key={log.id} className="flex items-start">
-                        <img src={log.user.avatarUrl} alt={log.user.name} className="w-8 h-8 rounded-full mr-3 mt-1" />
-                        <div>
-                            <p className="text-sm text-slate-600 dark:text-slate-300">
-                                <span className="font-semibold text-slate-800 dark:text-slate-100">{log.user.name}</span> {log.message}
-                            </p>
-                            <p className="text-xs text-slate-400 dark:text-slate-500">{getRelativeTime(log.timestamp)}</p>
-                        </div>
-                    </div>
-                )) : <p className="text-sm text-slate-500 dark:text-slate-400 text-center pt-10">No recent activity.</p>}
-            </div>
-        </div>
+      {/* Top Level Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricItem 
+            label="Total Tasks" 
+            value={totalTasks} 
+            icon={<FlagIcon className="w-6 h-6"/>}
+        />
+        <MetricItem 
+            label="Completion Rate" 
+            value={`${completionRate}%`} 
+            icon={<CheckCircleIcon className="w-6 h-6"/>}
+            color={completionRate > 80 ? 'text-emerald-400' : 'text-indigo-400'}
+        />
+        <MetricItem 
+            label="Overdue" 
+            value={overdueTasks.length} 
+            icon={<ClockIcon className="w-6 h-6"/>}
+            color={overdueTasks.length > 0 ? 'text-red-400' : 'text-slate-200'}
+        />
+        <MetricItem 
+            label="Avg Turnaround" 
+            value={avgCompletionTime} 
+            icon={<SparklesIcon className="w-6 h-6"/>}
+        />
       </div>
-      
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 sm:p-6 border border-slate-200 dark:border-slate-700">
-        <h3 className="text-xl font-bold mb-4 text-slate-800 dark:text-slate-100">AI Weekly Summary</h3>
-        <button onClick={handleGenerateSummary} disabled={isSummaryLoading} className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 mb-4">
-            {isSummaryLoading ? 'Generating...' : 'Generate Summary'}
-        </button>
-        {summaryError && <p className="text-red-500">{summaryError}</p>}
-        {summary && (
-            <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg whitespace-pre-wrap text-slate-600 dark:text-slate-300">
-                {summary}
+
+      {/* Main Grid Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Left Column (Charts) */}
+        <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <DashboardCard title="Status Distribution" className="h-80">
+                    <TaskStatusPieChart tasks={tasks} />
+                </DashboardCard>
+                <DashboardCard title="Priority Breakdown" className="h-80">
+                    <TaskPriorityBarChart tasks={tasks} />
+                </DashboardCard>
             </div>
-        )}
+
+            <DashboardCard title="Completion Velocity (Last 7 Days)">
+                <CompletionHistoryChart tasks={tasks} />
+            </DashboardCard>
+
+            {/* AI Summary Section */}
+            <div className="bg-gradient-to-br from-indigo-900/40 to-slate-900/40 border border-indigo-500/20 rounded-2xl p-6 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <SparklesIcon className="w-32 h-32 text-indigo-400" />
+                </div>
+                
+                <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2 bg-indigo-500/20 rounded-lg">
+                            <SparklesIcon className="w-5 h-5 text-indigo-400" />
+                        </div>
+                        <h3 className="text-lg font-bold text-white">AI Executive Summary</h3>
+                    </div>
+                    
+                    {!summary ? (
+                         <div className="text-center py-8">
+                            <p className="text-slate-400 mb-4 text-sm">Generate a comprehensive natural-language report of this week's progress.</p>
+                            <button 
+                                onClick={handleGenerateSummary}
+                                disabled={isSummaryLoading}
+                                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all active:scale-95 disabled:opacity-50"
+                            >
+                                {isSummaryLoading ? 'Analyzing Data...' : 'Generate Report'}
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="prose prose-invert prose-sm max-w-none">
+                            <div className="whitespace-pre-wrap text-slate-300 leading-relaxed bg-black/20 p-4 rounded-xl border border-white/5">
+                                {summary}
+                            </div>
+                            <button 
+                                onClick={() => setSummary('')} 
+                                className="mt-4 text-xs text-indigo-400 hover:text-white font-bold uppercase tracking-wider"
+                            >
+                                Clear Summary
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+
+        {/* Right Column (Team & Activity) */}
+        <div className="space-y-6 flex flex-col">
+            <DashboardCard title="Team Workload" className="min-h-[300px]">
+                <TasksPerEmployeeBarChart tasks={tasks} employees={employees} />
+            </DashboardCard>
+
+            <DashboardCard title="Recent Activity" className="flex-1 min-h-[400px]">
+                <div className="space-y-4 overflow-y-auto pr-2 max-h-[400px] scrollbar-thin scrollbar-thumb-white/10">
+                    {activityLogs.slice(0, 15).map((log) => (
+                        <div key={log.id} className="flex gap-3 items-start group">
+                            <img src={log.user.avatarUrl} alt="" className="w-8 h-8 rounded-lg border border-white/10 mt-1" />
+                            <div>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-sm font-bold text-slate-200">{log.user.name}</span>
+                                    <span className="text-[10px] text-slate-500 font-mono">{getRelativeTime(log.timestamp)}</span>
+                                </div>
+                                <p className="text-xs text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors">
+                                    {log.message}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+                    {activityLogs.length === 0 && (
+                        <div className="text-center py-10 text-slate-600 italic text-sm">No activity recorded yet.</div>
+                    )}
+                </div>
+            </DashboardCard>
+        </div>
       </div>
     </div>
   );

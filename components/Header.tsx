@@ -1,92 +1,113 @@
 
 import React from 'react';
-import { useAuth } from '../auth/AuthContext';
+import { User } from '../types';
 import { PlusIcon } from './icons/PlusIcon';
-import { SparklesIcon } from './icons/SparklesIcon';
-import ThemeToggle from './ThemeToggle';
 import { SearchIcon } from './icons/SearchIcon';
-import { Employee } from '../types';
+import { ViewColumnsIcon } from './icons/ViewColumnsIcon';
+import { CalendarIcon } from './icons/CalendarIcon';
+import { ListBulletIcon } from './icons/ListBulletIcon';
+import { SparklesIcon } from './icons/SparklesIcon';
+import { UserIcon } from './icons/UserIcon'; // Assuming you have a generic dashboard icon or reuse user
 
 interface HeaderProps {
+  activeSpace: string;
+  currentView: 'list' | 'board' | 'calendar' | 'dashboard';
+  onViewChange: (view: 'list' | 'board' | 'calendar' | 'dashboard') => void;
   onAddTask: () => void;
   onGenerateTasks: () => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
-  onOpenProfile: () => void;
-  currentUserEmployee?: Employee;
+  user: User;
 }
 
-const Header: React.FC<HeaderProps> = ({ onAddTask, onGenerateTasks, searchTerm, onSearchChange, onOpenProfile, currentUserEmployee }) => {
-  const { user, logout } = useAuth();
-
+const Header: React.FC<HeaderProps> = ({ 
+  activeSpace, 
+  currentView, 
+  onViewChange, 
+  onAddTask, 
+  onGenerateTasks, 
+  searchTerm, 
+  onSearchChange,
+  user
+}) => {
   return (
-    <header className="sticky top-0 z-50 bg-white/5 backdrop-blur-2xl border-b border-white/10 px-6 py-4 flex justify-between items-center">
-      <div className="flex items-center gap-8">
-        <div className="flex items-center gap-2 group cursor-pointer">
-          <SparklesIcon className="w-8 h-8 text-indigo-500 group-hover:rotate-12 transition-transform" />
-          <h1 className="text-2xl font-black text-white tracking-tighter uppercase">
-            TaskFlow
-          </h1>
+    <header className="h-16 border-b border-white/10 bg-slate-900/50 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-40">
+      
+      {/* Left: Breadcrumbs & Views */}
+      <div className="flex items-center gap-6">
+        <div className="flex items-center text-sm font-medium text-slate-400">
+           <span className="text-slate-500">Spaces</span>
+           <span className="mx-2 text-slate-600">/</span>
+           <span className="text-white font-bold">{activeSpace}</span>
         </div>
-        
-        <div className="relative hidden lg:block w-80 group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <SearchIcon className="h-5 w-5 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
-            </div>
-            <input 
-                type="text"
-                placeholder="Search tasks or tags..."
-                value={searchTerm}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="block w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl py-2.5 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm"
-            />
-        </div>
+
+        <div className="h-6 w-px bg-white/10 mx-2 hidden md:block"></div>
+
+        <nav className="flex items-center gap-1 bg-slate-800/50 p-1 rounded-lg">
+           {user.role === 'admin' && (
+             <button
+                onClick={() => onViewChange('dashboard')}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all ${currentView === 'dashboard' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+            >
+                <div className="w-4 h-4"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg></div>
+                <span className="hidden sm:inline">Overview</span>
+            </button>
+           )}
+
+            <button
+                onClick={() => onViewChange('list')}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all ${currentView === 'list' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+            >
+                <ListBulletIcon className="w-4 h-4"/>
+                <span className="hidden sm:inline">List</span>
+            </button>
+            <button
+                onClick={() => onViewChange('board')}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all ${currentView === 'board' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+            >
+                <ViewColumnsIcon className="w-4 h-4"/>
+                <span className="hidden sm:inline">Board</span>
+            </button>
+            <button
+                onClick={() => onViewChange('calendar')}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all ${currentView === 'calendar' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+            >
+                <CalendarIcon className="w-4 h-4"/>
+                <span className="hidden sm:inline">Calendar</span>
+            </button>
+        </nav>
       </div>
 
-      <div className="flex items-center space-x-4">
-        <button
-          onClick={onGenerateTasks}
-          className="flex items-center bg-indigo-600 hover:bg-indigo-500 text-white font-black py-2.5 px-6 rounded-2xl shadow-lg shadow-indigo-600/20 transition-all active:scale-95 text-xs uppercase tracking-widest"
-        >
-          <SparklesIcon className="w-4 h-4 mr-2" />
-          <span className="hidden sm:inline">AI Generate</span>
-        </button>
-        <button
-          onClick={onAddTask}
-          className="flex items-center bg-white/10 hover:bg-white/20 text-white font-black py-2.5 px-6 rounded-2xl border border-white/10 transition-all active:scale-95 text-xs uppercase tracking-widest"
-        >
-          <PlusIcon className="w-4 h-4 mr-2" />
-          <span className="hidden sm:inline">Add Task</span>
-        </button>
-        
-        <div className="h-6 w-px bg-white/10 mx-2"></div>
-        
-        <div 
-            onClick={onOpenProfile}
-            className="flex items-center gap-3 cursor-pointer group hover:bg-white/5 p-1.5 rounded-2xl transition-all"
-        >
-            <div className="relative">
-                <img 
-                    src={currentUserEmployee?.avatarUrl} 
-                    alt="" 
-                    className="w-9 h-9 rounded-xl border border-white/20 group-hover:border-indigo-500 transition-all object-cover"
-                />
-                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-slate-950 rounded-full"></div>
-            </div>
-            <div className="hidden sm:block">
-                <p className="text-xs font-black text-white uppercase tracking-wider">{currentUserEmployee?.name || user?.username}</p>
-                <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter leading-none mt-1">{user?.role}</p>
-            </div>
+      {/* Right: Actions */}
+      <div className="flex items-center gap-3">
+        {/* Search */}
+        <div className="relative group hidden md:block">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 group-focus-within:text-indigo-400" />
+            <input 
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => onSearchChange(e.target.value)}
+                className="bg-slate-800/50 border border-white/10 rounded-lg py-1.5 pl-9 pr-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 w-48 transition-all"
+            />
         </div>
 
+        {/* AI Action */}
         <button
-          onClick={logout}
-          className="text-slate-500 hover:text-red-400 p-2 transition-colors"
-          title="Sign out"
+          onClick={onGenerateTasks}
+          className="p-2 text-indigo-400 hover:text-white hover:bg-indigo-500/20 rounded-lg transition-all"
+          title="AI Generate Tasks"
         >
-             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
-            </svg>
+          <SparklesIcon className="w-5 h-5" />
+        </button>
+
+        {/* Add Task */}
+        <button
+          onClick={onAddTask}
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 px-4 rounded-lg shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
+        >
+          <PlusIcon className="w-4 h-4" />
+          <span className="hidden sm:inline uppercase tracking-wider">New Task</span>
         </button>
       </div>
     </header>
