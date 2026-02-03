@@ -1,13 +1,14 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// We prioritize environment variables if they exist, but fallback to the 
-// hardcoded values provided for this specific project.
-const supabaseUrl = process.env.SUPABASE_URL || 'https://vteqdozrlxvcahsxvgzz.supabase.co';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0ZXFkb3pybHh2Y2Foc3h2Z3p6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwOTkzMTgsImV4cCI6MjA4NTY3NTMxOH0.nOv7l98XCOMZ0FuPk2ce4YkToTz333xoQIDgqLmKLBE';
+// Access environment variables directly. 
+// Vite (via vite.config.ts) will inject these during the build process on Vercel.
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  console.warn("Supabase credentials missing. Data persistence will not work.");
+  // This error will appear in the browser console if you forgot to add the variables in Vercel
+  throw new Error("Supabase URL or Key is missing. Please check your Vercel Environment Variables.");
 }
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
