@@ -44,7 +44,7 @@ const MetricItem: React.FC<{ label: string; value: string | number; trend?: stri
                     {trend && <span className="text-xs font-medium text-emerald-500 dark:text-emerald-400">{trend}</span>}
                 </div>
             </div>
-            {icon && <div className="p-3 bg-slate-100 dark:bg-white/5 rounded-lg text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-white transition-colors">{icon}</div>}
+            {icon && <div className="p-3 bg-slate-100 dark:bg-white/5 rounded-lg text-slate-400 group-hover:text-primary-600 dark:group-hover:text-white transition-colors">{icon}</div>}
         </div>
     );
 };
@@ -112,7 +112,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ tasks, employees, activ
             label="Completion Rate" 
             value={`${completionRate}%`} 
             icon={<CheckCircleIcon className="w-6 h-6"/>}
-            color={completionRate > 80 ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'}
+            color={completionRate > 80 ? 'text-emerald-600 dark:text-emerald-400' : 'text-primary-600 dark:text-primary-400'}
         />
         <MetricItem 
             label="Overdue" 
@@ -146,15 +146,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ tasks, employees, activ
             </DashboardCard>
 
             {/* AI Summary Section */}
-            <div className="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-900/40 dark:to-slate-900/40 border border-indigo-200 dark:border-indigo-500/20 rounded-2xl p-6 relative overflow-hidden group shadow-sm dark:shadow-none">
+            <div className="bg-gradient-to-br from-primary-50 to-white dark:from-primary-900/40 dark:to-slate-900/40 border border-primary-200 dark:border-primary-500/20 rounded-2xl p-6 relative overflow-hidden group shadow-sm dark:shadow-none">
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <SparklesIcon className="w-32 h-32 text-indigo-400" />
+                    <SparklesIcon className="w-32 h-32 text-primary-400" />
                 </div>
                 
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-indigo-100 dark:bg-indigo-500/20 rounded-lg">
-                            <SparklesIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                        <div className="p-2 bg-primary-100 dark:bg-primary-500/20 rounded-lg">
+                            <SparklesIcon className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                         </div>
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white">AI Executive Summary</h3>
                     </div>
@@ -165,7 +165,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ tasks, employees, activ
                             <button 
                                 onClick={handleGenerateSummary}
                                 disabled={isSummaryLoading}
-                                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all active:scale-95 disabled:opacity-50"
+                                className="px-5 py-2.5 bg-primary-600 hover:bg-primary-500 text-white text-sm font-bold rounded-xl shadow-lg shadow-primary-600/20 transition-all active:scale-95 disabled:opacity-50"
                             >
                                 {isSummaryLoading ? 'Analyzing Data...' : 'Generate Report'}
                             </button>
@@ -177,7 +177,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ tasks, employees, activ
                             </div>
                             <button 
                                 onClick={() => setSummary('')} 
-                                className="mt-4 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-white font-bold uppercase tracking-wider"
+                                className="mt-4 text-xs text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-white font-bold uppercase tracking-wider"
                             >
                                 Clear Summary
                             </button>

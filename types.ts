@@ -40,6 +40,7 @@ export interface TimeLogEntry {
 
 export interface Task {
   id: number;
+  spaceId: string; // Link to specific space
   title: string;
   description: string;
   assigneeId: string;
@@ -50,23 +51,33 @@ export interface Task {
   subtasks: Subtask[];
   tags: string[];
   timeLogs: TimeLogEntry[];
-  timerStartTime?: string | null; // ISO 8601 string if timer is running, null otherwise
-  createdAt: string; // ISO 8601 string
-  completedAt?: string | null; // ISO 8601 string
+  timerStartTime?: string | null;
+  createdAt: string;
+  completedAt?: string | null;
   blockedById?: number | null;
 }
 
-export type Role = 'user' | 'admin';
+export interface Space {
+  id: string;
+  name: string;
+  joinCode: string;
+  ownerId: string; // The creator of the space
+  members: string[]; // Array of employee IDs
+  theme?: string; // Optional per-space theme override
+}
+
+// Deprecating strict 'admin' role in favor of Space Ownership
+export type Role = 'user' | 'admin'; 
 
 export interface User {
-  username: string; // Will be the employee's full name
-  role: Role;
+  username: string;
+  role: Role; 
   employeeId: string;
 }
 
 export interface ActivityLog {
   id: number;
-  timestamp: string; // ISO 8601 string
+  timestamp: string;
   message: string;
   user: {
     name: string;
@@ -76,8 +87,8 @@ export interface ActivityLog {
 
 export interface AuthContextType {
   user: User | null;
-  login: (username: string, password: string) => Promise<void>;
-  signup: (username: string, password: string, fullName: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, fullName: string) => Promise<void>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
 }

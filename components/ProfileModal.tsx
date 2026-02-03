@@ -8,7 +8,7 @@ import { BellIcon } from './icons/BellIcon';
 import { Cog6ToothIcon } from './icons/Cog6ToothIcon';
 import { SunIcon } from './icons/SunIcon';
 import { MoonIcon } from './icons/MoonIcon';
-import { useTheme } from './hooks/useTheme';
+import { useTheme, ColorScheme } from './hooks/useTheme';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -25,11 +25,36 @@ const ToggleSwitch: React.FC<{ enabled: boolean; onChange: (val: boolean) => voi
     <button
         type="button"
         onClick={() => onChange(!enabled)}
-        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${enabled ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'}`}
+        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${enabled ? 'bg-primary-600' : 'bg-slate-200 dark:bg-slate-700'}`}
     >
         <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${enabled ? 'translate-x-5' : 'translate-x-0'}`} />
     </button>
 );
+
+const ColorOption: React.FC<{ color: ColorScheme; selected: boolean; onSelect: () => void }> = ({ color, selected, onSelect }) => {
+    const bgClasses: Record<ColorScheme, string> = {
+        indigo: 'bg-indigo-500',
+        emerald: 'bg-emerald-500',
+        rose: 'bg-rose-500',
+        amber: 'bg-amber-500',
+        violet: 'bg-violet-500',
+        sky: 'bg-sky-500',
+    };
+
+    return (
+        <button
+            onClick={onSelect}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${bgClasses[color]} ${selected ? 'ring-4 ring-offset-2 ring-slate-300 dark:ring-slate-600 scale-110' : 'hover:scale-105'}`}
+            title={color.charAt(0).toUpperCase() + color.slice(1)}
+        >
+            {selected && (
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+            )}
+        </button>
+    );
+};
 
 const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, user, currentUserEmployee, onSave, onLogout }) => {
   const [activeTab, setActiveTab] = useState<Tab>('profile');
@@ -40,7 +65,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, user, curr
   const [avatarUrl, setAvatarUrl] = useState('');
   
   // Preferences State
-  const [theme, toggleTheme] = useTheme();
+  const [theme, toggleTheme, colorScheme, setColorScheme] = useTheme();
   const [compactMode, setCompactMode] = useState(false);
   
   // Notifications State
@@ -89,6 +114,8 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, user, curr
       { id: 'notifications', label: 'Notifications', icon: BellIcon },
   ];
 
+  const colorSchemes: ColorScheme[] = ['indigo', 'emerald', 'rose', 'amber', 'violet', 'sky'];
+
   return (
     <div 
         className={`fixed inset-0 z-50 flex justify-center items-center p-4 transition-all duration-300 ${show ? 'visible' : 'invisible'}`}
@@ -119,7 +146,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, user, curr
                             onClick={() => setActiveTab(item.id as Tab)}
                             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                                 activeTab === item.id 
-                                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400' 
+                                ? 'bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400' 
                                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
                             }`}
                         >
@@ -180,7 +207,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, user, curr
                                     value={avatarUrl}
                                     onChange={(e) => setAvatarUrl(e.target.value)}
                                     placeholder="https://..."
-                                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                                    className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:text-white"
                                 />
                             </div>
                         </div>
@@ -195,7 +222,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, user, curr
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white sm:text-sm"
+                                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white sm:text-sm"
                                 />
                             </div>
 
@@ -218,7 +245,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, user, curr
                         <div className="pt-4 flex justify-end">
                             <button
                                 type="submit"
-                                className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
+                                className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 shadow-lg shadow-primary-600/20 transition-all active:scale-95"
                             >
                                 Save Changes
                             </button>
@@ -231,31 +258,50 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, user, curr
                         {/* Appearance */}
                         <section>
                             <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-4">Appearance</h4>
-                            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-800">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-orange-500/20 text-orange-500'}`}>
-                                            {theme === 'dark' ? <MoonIcon className="w-5 h-5"/> : <SunIcon className="w-5 h-5"/>}
+                            <div className="space-y-4">
+                                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-800">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-primary-500/20 text-primary-400' : 'bg-orange-500/20 text-orange-500'}`}>
+                                                {theme === 'dark' ? <MoonIcon className="w-5 h-5"/> : <SunIcon className="w-5 h-5"/>}
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-slate-900 dark:text-white">Interface Theme</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400">Select your preferred lighting mode.</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="font-medium text-slate-900 dark:text-white">Interface Theme</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">Select your preferred color scheme.</p>
+                                        <div className="flex bg-slate-200 dark:bg-slate-700 rounded-lg p-1">
+                                            <button 
+                                                onClick={() => theme === 'dark' && toggleTheme()} 
+                                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${theme === 'light' ? 'bg-white text-slate-900 shadow' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
+                                            >
+                                                Light
+                                            </button>
+                                            <button 
+                                                onClick={() => theme === 'light' && toggleTheme()} 
+                                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${theme === 'dark' ? 'bg-slate-600 text-white shadow' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
+                                            >
+                                                Dark
+                                            </button>
                                         </div>
                                     </div>
-                                    <div className="flex bg-slate-200 dark:bg-slate-700 rounded-lg p-1">
-                                        <button 
-                                            onClick={() => theme === 'dark' && toggleTheme()} 
-                                            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${theme === 'light' ? 'bg-white text-slate-900 shadow' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
-                                        >
-                                            Light
-                                        </button>
-                                        <button 
-                                            onClick={() => theme === 'light' && toggleTheme()} 
-                                            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${theme === 'dark' ? 'bg-slate-600 text-white shadow' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
-                                        >
-                                            Dark
-                                        </button>
-                                    </div>
+                                </div>
+
+                                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-800">
+                                     <div className="mb-3">
+                                        <p className="font-medium text-slate-900 dark:text-white">Accent Color</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Choose a primary color for buttons and highlights.</p>
+                                     </div>
+                                     <div className="flex flex-wrap gap-4">
+                                         {colorSchemes.map(color => (
+                                             <ColorOption 
+                                                key={color} 
+                                                color={color} 
+                                                selected={colorScheme === color} 
+                                                onSelect={() => setColorScheme(color)} 
+                                            />
+                                         ))}
+                                     </div>
                                 </div>
                             </div>
                         </section>
@@ -271,13 +317,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, user, curr
                                     </div>
                                     <ToggleSwitch enabled={compactMode} onChange={setCompactMode} />
                                 </div>
-                                <div className="flex items-center justify-between p-4">
-                                    <div>
-                                        <p className="font-medium text-slate-900 dark:text-white">Reduced Motion</p>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">Minimize animations across the app.</p>
-                                    </div>
-                                    <ToggleSwitch enabled={false} onChange={() => {}} />
-                                </div>
                             </div>
                         </section>
                     </div>
@@ -285,9 +324,9 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, user, curr
 
                 {activeTab === 'notifications' && (
                     <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
-                         <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 flex gap-3">
-                            <BellIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
-                            <p className="text-sm text-indigo-800 dark:text-indigo-200">
+                         <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-xl p-4 flex gap-3">
+                            <BellIcon className="w-5 h-5 text-primary-600 dark:text-primary-400 flex-shrink-0" />
+                            <p className="text-sm text-primary-800 dark:text-primary-200">
                                 Notification settings are currently simulated for demonstration. Changes will be saved to your local session.
                             </p>
                          </div>

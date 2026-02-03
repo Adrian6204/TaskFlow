@@ -22,7 +22,7 @@ const TasksPerEmployeeBarChart: React.FC<TasksPerEmployeeBarChartProps> = ({ tas
           <img src={emp.avatarUrl} alt={emp.name} className="w-8 h-8 rounded-lg border border-slate-200 dark:border-white/10 flex-shrink-0" title={emp.name} />
           <div className="flex-grow bg-slate-100 dark:bg-slate-800 rounded-full h-6 overflow-hidden">
             <div
-              className="bg-indigo-500 h-6 rounded-full flex items-center justify-end px-2 transition-all duration-500"
+              className="bg-primary-500 h-6 rounded-full flex items-center justify-end px-2 transition-all duration-500"
               style={{ width: `${(emp.taskCount / maxTasks) * 100}%` }}
             >
               <span className="text-xs font-bold text-white">{emp.taskCount}</span>

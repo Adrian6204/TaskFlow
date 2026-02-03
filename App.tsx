@@ -1,7 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Task, TaskStatus, Employee, Priority, Comment, ActivityLog, TimeLogEntry } from './types';
-import { INITIAL_TASKS, EMPLOYEES } from './constants';
+import { Task, TaskStatus, Employee, Priority, Comment, ActivityLog, TimeLogEntry, Space } from './types';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import TaskBoard from './components/TaskBoard';
@@ -16,43 +15,26 @@ import { useNotification } from './context/NotificationContext';
 import CalendarView from './components/CalendarView';
 import ConfirmationModal from './components/ConfirmationModal';
 import ProfileModal from './components/ProfileModal';
+import CreateSpaceModal from './components/CreateSpaceModal';
+import JoinSpaceModal from './components/JoinSpaceModal';
+import SpaceSettingsModal from './components/SpaceSettingsModal';
+import { Cog6ToothIcon } from './components/icons/Cog6ToothIcon';
+import * as dataService from './services/supabaseService';
 
 const App: React.FC = () => {
   const { user, updateUser, logout } = useAuth();
   const { showNotification } = useNotification();
   
   // Data State
-  const [tasks, setTasks] = useState<Task[]>(() => {
-    try {
-      const savedTasks = localStorage.getItem('taskflow_tasks');
-      return savedTasks ? JSON.parse(savedTasks) : INITIAL_TASKS;
-    } catch (error) {
-      return INITIAL_TASKS;
-    }
-  });
-
-  const [employees, setEmployees] = useState<Employee[]>(() => {
-    try {
-      const savedEmployees = localStorage.getItem('taskflow_employees');
-      return savedEmployees ? JSON.parse(savedEmployees) : EMPLOYEES;
-    } catch (error) {
-      return EMPLOYEES;
-    }
-  });
-
-  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>(() => {
-    try {
-      const savedLogs = localStorage.getItem('taskflow_logs');
-      return savedLogs ? JSON.parse(savedLogs) : [];
-    } catch (error) {
-       return [];
-    }
-  });
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [spaces, setSpaces] = useState<Space[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
 
   // UI State
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [currentView, setCurrentView] = useState<'list' | 'board' | 'calendar' | 'dashboard'>('list');
-  const [activeSpace, setActiveSpace] = useState<string>('Everything');
+  const [activeSpaceId, setActiveSpaceId] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   
   // Modals
@@ -61,38 +43,74 @@ const App: React.FC = () => {
   const [isTaskDetailsModalOpen, setTaskDetailsModalOpen] = useState(false);
   const [isProfileModalOpen, setProfileModalOpen] = useState(false);
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [isCreateSpaceModalOpen, setCreateSpaceModalOpen] = useState(false);
+  const [isJoinSpaceModalOpen, setJoinSpaceModalOpen] = useState(false);
+  const [isSpaceSettingsModalOpen, setSpaceSettingsModalOpen] = useState(false);
   
   // Selection
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [taskToDeleteId, setTaskToDeleteId] = useState<number | null>(null);
 
-  // Persistence
+  // Load User Data
   useEffect(() => {
-    if (user) {
-        try {
-            const savedEmployees = localStorage.getItem('taskflow_employees');
-            if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
-        } catch (error) { console.error("Failed to refresh employees", error); }
-    }
+      if (user) {
+          loadEmployees();
+          loadSpaces();
+      }
   }, [user]);
 
-  useEffect(() => { localStorage.setItem('taskflow_tasks', JSON.stringify(tasks)); }, [tasks]);
-  useEffect(() => { localStorage.setItem('taskflow_employees', JSON.stringify(employees)); }, [employees]);
-  useEffect(() => { localStorage.setItem('taskflow_logs', JSON.stringify(activityLogs)); }, [activityLogs]);
+  // Load Tasks when Space Changes
+  useEffect(() => {
+      if (activeSpaceId) {
+          loadTasks(activeSpaceId);
+      } else {
+          setTasks([]);
+      }
+  }, [activeSpaceId]);
 
-  // Filtering Logic
+  const loadEmployees = async () => {
+      try {
+          const emps = await dataService.getAllEmployees();
+          setEmployees(emps);
+      } catch (err) {
+          console.error("Failed to load employees", err);
+      }
+  };
+
+  const loadSpaces = async () => {
+      if (!user) return;
+      try {
+          const loadedSpaces = await dataService.getSpaces(user.employeeId);
+          setSpaces(loadedSpaces);
+          
+          if (loadedSpaces.length > 0 && !activeSpaceId) {
+              setActiveSpaceId(loadedSpaces[0].id);
+          }
+      } catch (err) {
+          console.error("Failed to load spaces", err);
+      }
+  };
+
+  const loadTasks = async (spaceId: string) => {
+      try {
+          const loadedTasks = await dataService.getTasks(spaceId);
+          setTasks(loadedTasks);
+      } catch (err) {
+          console.error("Failed to load tasks", err);
+          showNotification("Failed to load tasks", 'error');
+      }
+  };
+
+  const currentUserEmployee = useMemo(() => {
+      return employees.find(e => e.id === user?.employeeId);
+  }, [employees, user]);
+
+  const currentSpace = spaces.find(s => s.id === activeSpaceId);
+
   const filteredTasks = useMemo(() => {
-    let filtered = user?.role === 'admin' 
-      ? tasks 
-      : tasks.filter(task => task.assigneeId === user?.employeeId);
-
-    // Filter by Space (using Tags as proxy for spaces in this demo)
-    if (activeSpace !== 'Everything') {
-      filtered = filtered.filter(t => t.tags?.some(tag => tag.toLowerCase() === activeSpace.toLowerCase()) || false);
-    }
-
-    // Filter by Search
+    if (!activeSpaceId) return [];
+    let filtered = tasks;
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(task => 
@@ -100,13 +118,13 @@ const App: React.FC = () => {
           (task.tags && task.tags.some(tag => tag.toLowerCase().includes(term)))
       );
     }
-    
     return filtered;
-  }, [tasks, user, searchTerm, activeSpace]);
+  }, [tasks, activeSpaceId, searchTerm]);
   
-  const currentUserEmployee = useMemo(() => {
-      return employees.find(e => e.id === user?.employeeId);
-  }, [employees, user]);
+  const spaceMembers = useMemo(() => {
+      if (!currentSpace) return [];
+      return employees.filter(e => currentSpace.members.includes(e.id));
+  }, [currentSpace, employees]);
 
   const logActivity = (message: string) => {
     if (!user) return;
@@ -122,44 +140,114 @@ const App: React.FC = () => {
     setActivityLogs(prev => [newLog, ...prev].slice(0, 50));
   };
 
-  // Handlers
+  const handleCreateSpace = async (name: string) => {
+      if (!user) return;
+      try {
+          const newSpace = await dataService.createSpace(name, user.employeeId);
+          setSpaces([...spaces, newSpace]);
+          setActiveSpaceId(newSpace.id);
+          showNotification(`Created space "${name}"`);
+      } catch (err: any) {
+          showNotification(err.message, 'error');
+      }
+  };
+
+  const handleJoinSpace = async (code: string) => {
+      if (!user) return;
+      try {
+          const joinedSpace = await dataService.joinSpace(code, user.employeeId);
+          // Refresh list to be safe, or push
+          setSpaces([...spaces, { ...joinedSpace, members: [...joinedSpace.members, user.employeeId] }]);
+          setActiveSpaceId(joinedSpace.id);
+          showNotification(`Joined "${joinedSpace.name}"`);
+      } catch (err: any) {
+          showNotification(err.message, 'error');
+      }
+  };
+
   const handleOpenAddTaskModal = (task: Task | null = null) => {
     setTaskToEdit(task);
     setAddTaskModalOpen(true);
   };
 
-  const handleUpdateTaskStatus = (taskId: number, newStatus: TaskStatus) => {
+  const handleSaveTask = async (data: any, id: number | null) => {
+      if (!activeSpaceId || !user) return;
+      
+      const payload = {
+          ...data,
+          id: id || undefined,
+          spaceId: activeSpaceId,
+          assigneeId: data.assigneeId || user.employeeId // Default to self if missing
+      };
+
+      try {
+          const savedTask = await dataService.upsertTask(payload);
+          
+          if (id) {
+              setTasks(tasks.map(t => t.id === id ? { ...t, ...savedTask } : t));
+              logActivity(`updated "${data.title}"`);
+          } else {
+              setTasks([savedTask, ...tasks]);
+              logActivity(`created "${savedTask.title}"`);
+          }
+          setAddTaskModalOpen(false);
+      } catch (err: any) {
+          console.error(err);
+          showNotification("Failed to save task", 'error');
+      }
+  };
+
+  const handleUpdateTaskStatus = async (taskId: number, newStatus: TaskStatus) => {
     const taskToUpdate = tasks.find(t => t.id === taskId);
     if (!taskToUpdate || taskToUpdate.status === newStatus) return;
     
-    logActivity(`moved "${taskToUpdate.title}" to ${newStatus}`);
+    // Optimistic UI Update
     const completedAt = newStatus === TaskStatus.DONE ? new Date().toISOString() : taskToUpdate.completedAt;
+    const updatedTask = { ...taskToUpdate, status: newStatus, completedAt };
     
-    // Unblock dependent tasks
+    // Optimistic unblocking
     const unblockedTasks = tasks.map(t => (t.blockedById === taskId) ? {...t, blockedById: null} : t);
+    setTasks(unblockedTasks.map(t => t.id === taskId ? updatedTask : t));
 
-    setTasks(unblockedTasks.map(task => 
-      task.id === taskId ? { ...task, status: newStatus, completedAt } : task
-    ));
-    showNotification(`Moved to ${newStatus}`, 'success');
+    try {
+        await dataService.upsertTask(updatedTask);
+        // Also update blocked tasks in DB if any? For simplicity, we just updated local state.
+        logActivity(`moved "${taskToUpdate.title}" to ${newStatus}`);
+        showNotification(`Moved to ${newStatus}`, 'success');
+    } catch (err) {
+        showNotification("Failed to update status", 'error');
+        loadTasks(activeSpaceId); // Revert
+    }
   };
 
-  const handleToggleTimer = (id: number) => {
+  const handleToggleTimer = async (id: number) => {
     const task = tasks.find(t => t.id === id);
-    if (task) {
-      const now = new Date();
-      let updated: Task;
-      if (task.timerStartTime) {
+    if (!task) return;
+
+    const now = new Date();
+    let updated: Task;
+    
+    if (task.timerStartTime) {
+        // Stop
         const start = new Date(task.timerStartTime);
         const dur = now.getTime() - start.getTime();
-        updated = { ...task, timerStartTime: null, timeLogs: [{ id: Date.now().toString(), startTime: task.timerStartTime, endTime: now.toISOString(), duration: dur }, ...(task.timeLogs || [])] };
-        logActivity(`logged time on "${task.title}"`);
-      } else {
-        updated = { ...task, timerStartTime: now.toISOString(), timeLogs: task.timeLogs || [] };
-        logActivity(`started timer on "${task.title}"`);
-      }
-      setTasks(tasks.map(t => t.id === id ? updated : t));
+        try {
+            await dataService.logTaskTime(task.id, task.timerStartTime, now.toISOString(), dur);
+            await dataService.upsertTask({ ...task, timerStartTime: null });
+            
+            // Refetch or manual update? Manual for speed.
+            updated = { ...task, timerStartTime: null, timeLogs: [{ id: 'temp', startTime: task.timerStartTime, endTime: now.toISOString(), duration: dur }, ...(task.timeLogs || [])] };
+            logActivity(`logged time on "${task.title}"`);
+        } catch(err) { showNotification("Failed to log time", 'error'); return; }
+    } else {
+        // Start
+        try {
+            await dataService.upsertTask({ ...task, timerStartTime: now.toISOString() });
+            updated = { ...task, timerStartTime: now.toISOString() };
+            logActivity(`started timer on "${task.title}"`);
+        } catch(err) { showNotification("Failed to start timer", 'error'); return; }
     }
+    setTasks(tasks.map(t => t.id === id ? updated : t));
   };
 
   if (!user) return <LoginPage />;
@@ -169,14 +257,17 @@ const App: React.FC = () => {
       {/* Sidebar */}
       <Sidebar 
         isOpen={isSidebarOpen} 
-        activeSpace={activeSpace}
-        onSelectSpace={(space) => {
-          setActiveSpace(space);
-          if (currentView === 'dashboard' && space !== 'Everything') setCurrentView('list');
+        activeSpaceId={activeSpaceId}
+        spaces={spaces}
+        onSelectSpace={(id) => {
+          setActiveSpaceId(id);
+          if (currentView === 'dashboard') setCurrentView('list');
         }}
         onToggle={() => setSidebarOpen(!isSidebarOpen)}
         onOpenProfile={() => setProfileModalOpen(true)}
         onLogout={logout}
+        onCreateSpace={() => setCreateSpaceModalOpen(true)}
+        onJoinSpace={() => setJoinSpaceModalOpen(true)}
         currentUserEmployee={currentUserEmployee}
         user={user}
       />
@@ -184,11 +275,11 @@ const App: React.FC = () => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
         <Header 
-          activeSpace={activeSpace}
+          activeSpace={currentSpace ? currentSpace.name : 'No Space Selected'}
           currentView={currentView}
           onViewChange={setCurrentView}
-          onAddTask={() => handleOpenAddTaskModal()} 
-          onGenerateTasks={() => setGenerateTaskModalOpen(true)}
+          onAddTask={() => activeSpaceId ? handleOpenAddTaskModal() : showNotification("Select a space first", 'error')} 
+          onGenerateTasks={() => activeSpaceId ? setGenerateTaskModalOpen(true) : showNotification("Select a space first", 'error')}
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           user={user}
@@ -197,40 +288,72 @@ const App: React.FC = () => {
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-white/10 scrollbar-track-transparent">
           <div className="max-w-[1600px] mx-auto animate-in fade-in duration-500">
             
-            {/* View Switching */}
-            {currentView === 'dashboard' && user.role === 'admin' && (
-               <AdminDashboard tasks={tasks} employees={employees} activityLogs={activityLogs} />
+            {/* Context Header for Space */}
+            {activeSpaceId && (
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{currentSpace?.name}</h1>
+                    <button 
+                        onClick={() => setSpaceSettingsModalOpen(true)}
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                    >
+                        <Cog6ToothIcon className="w-4 h-4" />
+                        Space Settings
+                    </button>
+                </div>
             )}
 
-            {currentView === 'list' && (
-              <TaskListView
-                tasks={filteredTasks}
-                employees={employees}
-                onEditTask={handleOpenAddTaskModal}
-                onViewTask={(task) => { setSelectedTask(task); setTaskDetailsModalOpen(true); }}
-                onUpdateTaskStatus={handleUpdateTaskStatus}
-                onToggleTimer={handleToggleTimer}
-              />
-            )}
+            {!activeSpaceId ? (
+                <div className="flex flex-col items-center justify-center h-[60vh] text-center p-8">
+                    <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                        <Cog6ToothIcon className="w-10 h-10 text-slate-400" />
+                    </div>
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">No Space Selected</h2>
+                    <p className="text-slate-500 dark:text-slate-400 max-w-md mb-6">
+                        Join an existing team space using a code, or create a new one to get started.
+                    </p>
+                    <div className="flex gap-4">
+                        <button onClick={() => setCreateSpaceModalOpen(true)} className="px-6 py-3 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 shadow-lg shadow-primary-500/20">Create Space</button>
+                        <button onClick={() => setJoinSpaceModalOpen(true)} className="px-6 py-3 bg-white dark:bg-slate-800 text-slate-700 dark:text-white font-bold rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700">Join Space</button>
+                    </div>
+                </div>
+            ) : (
+                <>
+                    {/* View Switching */}
+                    {currentView === 'dashboard' && (
+                        <AdminDashboard tasks={filteredTasks} employees={spaceMembers} activityLogs={activityLogs} />
+                    )}
 
-            {currentView === 'board' && (
-               <TaskBoard
-                tasks={filteredTasks}
-                allTasks={tasks}
-                employees={employees}
-                onEditTask={handleOpenAddTaskModal}
-                onDeleteTask={user.role === 'admin' ? (id) => { setTaskToDeleteId(id); setDeleteModalOpen(true); } : undefined}
-                onUpdateTaskStatus={handleUpdateTaskStatus}
-                onViewTask={(task) => { setSelectedTask(task); setTaskDetailsModalOpen(true); }}
-                onToggleTimer={handleToggleTimer}
-              />
-            )}
+                    {currentView === 'list' && (
+                        <TaskListView
+                            tasks={filteredTasks}
+                            employees={spaceMembers}
+                            onEditTask={handleOpenAddTaskModal}
+                            onViewTask={(task) => { setSelectedTask(task); setTaskDetailsModalOpen(true); }}
+                            onUpdateTaskStatus={handleUpdateTaskStatus}
+                            onToggleTimer={handleToggleTimer}
+                        />
+                    )}
 
-            {currentView === 'calendar' && (
-              <CalendarView 
-                  tasks={filteredTasks}
-                  onViewTask={(task) => { setSelectedTask(task); setTaskDetailsModalOpen(true); }}
-              />
+                    {currentView === 'board' && (
+                        <TaskBoard
+                            tasks={filteredTasks}
+                            allTasks={tasks} // Pass all to check dependencies even outside filter
+                            employees={spaceMembers}
+                            onEditTask={handleOpenAddTaskModal}
+                            onDeleteTask={(id) => { setTaskToDeleteId(id); setDeleteModalOpen(true); }} // Allow deletion in space
+                            onUpdateTaskStatus={handleUpdateTaskStatus}
+                            onViewTask={(task) => { setSelectedTask(task); setTaskDetailsModalOpen(true); }}
+                            onToggleTimer={handleToggleTimer}
+                        />
+                    )}
+
+                    {currentView === 'calendar' && (
+                        <CalendarView 
+                            tasks={filteredTasks}
+                            onViewTask={(task) => { setSelectedTask(task); setTaskDetailsModalOpen(true); }}
+                        />
+                    )}
+                </>
             )}
           </div>
         </main>
@@ -241,20 +364,10 @@ const App: React.FC = () => {
         <AddTaskModal
           isOpen={isAddTaskModalOpen}
           onClose={() => setAddTaskModalOpen(false)}
-          onSave={(data, id) => {
-            if (id !== null) {
-              setTasks(tasks.map(t => t.id === id ? { ...t, ...data } : t));
-              logActivity(`updated "${data.title}"`);
-            } else {
-              const newTask: Task = { id: Date.now(), status: TaskStatus.TODO, comments: [], subtasks: [], tags: activeSpace !== 'Everything' ? [activeSpace] : [], timeLogs: [], timerStartTime: null, createdAt: new Date().toISOString(), ...data };
-              setTasks([...tasks, newTask]);
-              logActivity(`created "${newTask.title}"`);
-            }
-            setAddTaskModalOpen(false);
-          }}
-          employees={employees}
+          onSave={handleSaveTask}
+          employees={spaceMembers}
           taskToEdit={taskToEdit}
-          allTasks={tasks}
+          allTasks={filteredTasks}
         />
       )}
 
@@ -262,12 +375,15 @@ const App: React.FC = () => {
         <GenerateTasksModal 
           isOpen={isGenerateTaskModalOpen}
           onClose={() => setGenerateTaskModalOpen(false)}
-          onTasksGenerated={(gen) => {
-            const newTasks: Task[] = gen.map(t => ({ ...t, id: Date.now() + Math.random(), status: TaskStatus.TODO, priority: Priority.MEDIUM, comments: [], subtasks: [], tags: activeSpace !== 'Everything' ? [activeSpace] : [], timeLogs: [], timerStartTime: null, createdAt: new Date().toISOString() }));
-            setTasks([...tasks, ...newTasks]);
-            logActivity(`AI generated ${newTasks.length} tasks`);
+          onTasksGenerated={async (gen) => {
+            if (!activeSpaceId || !user) return;
+            // Iterate and save all
+            for (const t of gen) {
+                await handleSaveTask(t, null);
+            }
+            showNotification(`Generated ${gen.length} tasks`, 'success');
           }}
-          employees={employees}
+          employees={spaceMembers}
         />
       )}
 
@@ -276,17 +392,24 @@ const App: React.FC = () => {
           isOpen={isTaskDetailsModalOpen}
           onClose={() => setTaskDetailsModalOpen(false)}
           task={selectedTask}
-          employees={employees}
-          allTasks={tasks}
-          onAddComment={(id, content) => {
-            const newComm: Comment = { id: Date.now(), authorId: user.employeeId, content, timestamp: new Date().toISOString() };
-            const updated = { ...selectedTask, comments: [...selectedTask.comments, newComm] };
-            setTasks(tasks.map(t => t.id === id ? updated : t));
-            setSelectedTask(updated);
+          employees={spaceMembers}
+          allTasks={filteredTasks}
+          onAddComment={async (taskId, content) => {
+              if(!user) return;
+              try {
+                  const newComment = await dataService.addTaskComment(taskId, user.employeeId, content);
+                  const updatedTask = { ...selectedTask, comments: [...selectedTask.comments, newComment] };
+                  setTasks(tasks.map(t => t.id === taskId ? updatedTask : t));
+                  setSelectedTask(updatedTask);
+              } catch(err) { console.error(err); }
           }}
-          onUpdateTask={(updated) => {
-            setTasks(tasks.map(t => t.id === updated.id ? updated : t));
-            setSelectedTask(updated);
+          onUpdateTask={async (updated) => {
+            // Need to convert back to saving format or just use the whole object if upsert handles it
+            try {
+                await dataService.upsertTask(updated);
+                setTasks(tasks.map(t => t.id === updated.id ? updated : t));
+                setSelectedTask(updated);
+            } catch(err) { console.error(err); }
           }}
           onToggleTimer={handleToggleTimer}
         />
@@ -296,10 +419,13 @@ const App: React.FC = () => {
         <ConfirmationModal
           isOpen={isDeleteModalOpen}
           onClose={() => setDeleteModalOpen(false)}
-          onConfirm={() => {
+          onConfirm={async () => {
             if (taskToDeleteId) {
-              setTasks(tasks.filter(t => t.id !== taskToDeleteId));
-              showNotification('Deleted', 'success');
+              try {
+                  await dataService.deleteTask(taskToDeleteId);
+                  setTasks(tasks.filter(t => t.id !== taskToDeleteId));
+                  showNotification('Deleted', 'success');
+              } catch (err) { showNotification('Delete failed', 'error'); }
               setDeleteModalOpen(false);
             }
           }}
@@ -308,20 +434,41 @@ const App: React.FC = () => {
         />
       )}
 
-      {isProfileModalOpen && (
+      {isProfileModalOpen && user && (
           <ProfileModal 
             isOpen={isProfileModalOpen}
             onClose={() => setProfileModalOpen(false)}
             user={user}
             currentUserEmployee={currentUserEmployee}
             onSave={(name, avatar) => {
-              setEmployees(employees.map(e => e.id === user.employeeId ? { ...e, name, avatarUrl: avatar } : e));
               updateUser({ username: name });
+              // Avatar persistence would go here if extending profile table
             }}
             onLogout={() => {
               setProfileModalOpen(false);
               logout();
             }}
+          />
+      )}
+
+      <CreateSpaceModal 
+        isOpen={isCreateSpaceModalOpen}
+        onClose={() => setCreateSpaceModalOpen(false)}
+        onCreate={handleCreateSpace}
+      />
+
+      <JoinSpaceModal
+        isOpen={isJoinSpaceModalOpen}
+        onClose={() => setJoinSpaceModalOpen(false)}
+        onJoin={handleJoinSpace}
+      />
+
+      {currentSpace && (
+          <SpaceSettingsModal 
+            isOpen={isSpaceSettingsModalOpen}
+            onClose={() => setSpaceSettingsModalOpen(false)}
+            space={currentSpace}
+            members={spaceMembers}
           />
       )}
     </div>

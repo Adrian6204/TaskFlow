@@ -19,7 +19,7 @@ interface TaskListViewProps {
 
 const statusColors = {
   [TaskStatus.TODO]: 'bg-orange-500',
-  [TaskStatus.IN_PROGRESS]: 'bg-indigo-500',
+  [TaskStatus.IN_PROGRESS]: 'bg-indigo-500', // Keep semantic
   [TaskStatus.DONE]: 'bg-emerald-500',
 };
 
@@ -87,7 +87,7 @@ const TaskGroup: React.FC<{
                             <div className="min-w-0">
                                 <div className="flex items-center gap-3">
                                     <div className={`w-1.5 h-1.5 rounded-full ${statusColors[status]}`}></div>
-                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                                         {task.title}
                                     </span>
                                 </div>
@@ -128,7 +128,7 @@ const TaskGroup: React.FC<{
                             <div className="flex justify-end">
                                 <button
                                     onClick={(e) => { e.stopPropagation(); onToggleTimer(task.id); }}
-                                    className={`p-1.5 rounded-md transition-all ${isTracking ? 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400' : 'text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-200 dark:hover:bg-white/5 opacity-0 group-hover:opacity-100'}`}
+                                    className={`p-1.5 rounded-md transition-all ${isTracking ? 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400' : 'text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-200 dark:hover:bg-white/5 opacity-0 group-hover:opacity-100'}`}
                                 >
                                     {isTracking ? <StopIcon className="w-4 h-4" /> : <PlayIcon className="w-4 h-4" />}
                                 </button>

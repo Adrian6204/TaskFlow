@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 import { UserIcon } from './icons/UserIcon';
 import { LockClosedIcon } from './icons/LockClosedIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
@@ -9,22 +10,22 @@ import { ViewColumnsIcon } from './icons/ViewColumnsIcon';
 
 const HERO_SLIDES = [
   {
-    icon: <SparklesIcon className="w-10 h-10 text-indigo-100" />,
+    icon: <SparklesIcon className="w-10 h-10 text-white" />,
     title: "AI-Powered Precision",
     content: "Automatically break down complex projects into manageable daily tasks.",
-    accent: "bg-indigo-500/80"
+    accent: "bg-primary-500/80"
   },
   {
-    icon: <ViewColumnsIcon className="w-10 h-10 text-violet-100" />,
+    icon: <ViewColumnsIcon className="w-10 h-10 text-white" />,
     title: "Visual Workflow",
     content: "Kanban and Calendar views designed for clarity and team alignment.",
-    accent: "bg-violet-500/80"
+    accent: "bg-primary-600/80"
   },
   {
-    icon: <ClockIcon className="w-10 h-10 text-purple-100" />,
+    icon: <ClockIcon className="w-10 h-10 text-white" />,
     title: "Deep Analytics",
     content: "Track time and generate AI summaries of your team's weekly wins.",
-    accent: "bg-purple-500/80"
+    accent: "bg-primary-400/80"
   }
 ];
 
@@ -32,7 +33,7 @@ const LoginPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [activeSlide, setActiveSlide] = useState(0);
   
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -41,6 +42,7 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const { login, signup } = useAuth();
+  const { showNotification } = useNotification();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -61,9 +63,14 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
     try {
       if (isLogin) {
-        await login(username, password);
+        await login(email, password);
       } else {
-        await signup(username, password, fullName);
+        await signup(email, password, fullName);
+        // If successful and no error thrown:
+        showNotification("Account created! Please sign in (check email if confirmation is enabled).", "success");
+        setIsLogin(true); // Switch to login mode
+        setPassword('');
+        setConfirmPassword('');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -79,7 +86,7 @@ const LoginPage: React.FC = () => {
         {/* Left Side: Brand & Carousel */}
         <div className="hidden lg:flex flex-col justify-center space-y-10 p-8">
           <div className="flex items-center gap-3 text-slate-800 dark:text-white">
-            <div className="p-2 bg-indigo-600 rounded-lg shadow-lg shadow-indigo-500/30">
+            <div className="p-2 bg-primary-600 rounded-lg shadow-lg shadow-primary-500/30">
               <SparklesIcon className="w-8 h-8 text-white" />
             </div>
             <span className="text-3xl font-black tracking-tighter uppercase">TaskFlow</span>
@@ -101,7 +108,7 @@ const LoginPage: React.FC = () => {
                 <h2 className="text-5xl font-extrabold text-slate-900 dark:text-white mb-6 leading-tight tracking-tight">
                   {slide.title}
                 </h2>
-                <p className="text-slate-600 dark:text-indigo-100/60 text-xl leading-relaxed max-w-md">
+                <p className="text-slate-600 dark:text-primary-100/60 text-xl leading-relaxed max-w-md">
                   {slide.content}
                 </p>
               </div>
@@ -125,7 +132,7 @@ const LoginPage: React.FC = () => {
         <div className="flex justify-center">
           <div className="w-full max-w-md bg-white/70 dark:bg-white/[0.03] backdrop-blur-3xl rounded-[2.5rem] p-10 lg:p-12 border border-slate-100 dark:border-white/10 shadow-2xl dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)]">
             <div className="lg:hidden flex items-center gap-2 text-slate-900 dark:text-white mb-10">
-               <SparklesIcon className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
+               <SparklesIcon className="w-6 h-6 text-primary-500 dark:text-primary-400" />
                <span className="text-xl font-black uppercase tracking-tighter">TaskFlow</span>
             </div>
 
@@ -143,13 +150,13 @@ const LoginPage: React.FC = () => {
                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">Full Name</label>
                   <div className="relative group">
-                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors group-focus-within:text-indigo-500 dark:group-focus-within:text-indigo-400" />
+                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors group-focus-within:text-primary-500 dark:group-focus-within:text-primary-400" />
                     <input
                       type="text"
                       required
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-white/[0.05] border border-slate-200 dark:border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                      className="w-full bg-slate-50 dark:bg-white/[0.05] border border-slate-200 dark:border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all"
                       placeholder="Jane Doe"
                     />
                   </div>
@@ -157,16 +164,16 @@ const LoginPage: React.FC = () => {
               )}
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">Username</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">Email Address</label>
                 <div className="relative group">
-                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors group-focus-within:text-indigo-500 dark:group-focus-within:text-indigo-400" />
+                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors group-focus-within:text-primary-500 dark:group-focus-within:text-primary-400" />
                   <input
-                    type="text"
+                    type="email"
                     required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-white/[0.05] border border-slate-200 dark:border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
-                    placeholder="janedoe"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-white/[0.05] border border-slate-200 dark:border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all"
+                    placeholder="name@company.com"
                   />
                 </div>
               </div>
@@ -174,13 +181,13 @@ const LoginPage: React.FC = () => {
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">Password</label>
                 <div className="relative group">
-                  <LockClosedIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors group-focus-within:text-indigo-500 dark:group-focus-within:text-indigo-400" />
+                  <LockClosedIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors group-focus-within:text-primary-500 dark:group-focus-within:text-primary-400" />
                   <input
                     type="password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-white/[0.05] border border-slate-200 dark:border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                    className="w-full bg-slate-50 dark:bg-white/[0.05] border border-slate-200 dark:border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all"
                     placeholder="••••••••"
                   />
                 </div>
@@ -194,7 +201,7 @@ const LoginPage: React.FC = () => {
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-white/[0.05] border border-slate-200 dark:border-white/10 rounded-2xl py-3.5 px-4 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                    className="w-full bg-slate-50 dark:bg-white/[0.05] border border-slate-200 dark:border-white/10 rounded-2xl py-3.5 px-4 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all"
                     placeholder="••••••••"
                   />
                 </div>
@@ -209,7 +216,7 @@ const LoginPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-4 px-6 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl shadow-xl shadow-indigo-600/20 transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed mt-4 uppercase tracking-widest text-sm"
+                className="w-full py-4 px-6 bg-primary-600 hover:bg-primary-500 text-white font-black rounded-2xl shadow-xl shadow-primary-600/20 transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed mt-4 uppercase tracking-widest text-sm"
               >
                 {isLoading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
               </button>

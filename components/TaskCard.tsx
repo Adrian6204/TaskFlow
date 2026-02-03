@@ -25,7 +25,7 @@ interface TaskCardProps {
 const priorityConfig = {
     [Priority.URGENT]: 'border-l-4 border-l-red-500',
     [Priority.HIGH]: 'border-l-4 border-l-orange-500',
-    [Priority.MEDIUM]: 'border-l-4 border-l-indigo-500',
+    [Priority.MEDIUM]: 'border-l-4 border-l-indigo-500', // Keep fixed for semantic meaning
     [Priority.LOW]: 'border-l-4 border-l-slate-400 dark:border-l-slate-500',
 };
 
@@ -103,7 +103,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, allTasks, employee, onEditTas
         </div>
         
         <div className="flex items-center gap-3">
-            {isTracking && <ClockIcon className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 animate-pulse" />}
+            {isTracking && <ClockIcon className="w-3.5 h-3.5 text-primary-500 dark:text-primary-400 animate-pulse" />}
             {isBlocked && <LockClosedIcon className="w-3.5 h-3.5 text-amber-500" />}
             
             {totalSubtasks > 0 && (

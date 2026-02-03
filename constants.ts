@@ -1,5 +1,5 @@
 
-import { Task, Employee, TaskStatus, Priority } from './types';
+import { Task, Employee, TaskStatus, Priority, Space } from './types';
 
 export const EMPLOYEES: Employee[] = [
   { id: 'emp-1', name: 'Alice Johnson', avatarUrl: 'https://picsum.photos/seed/alice/40/40' },
@@ -8,11 +8,27 @@ export const EMPLOYEES: Employee[] = [
   { id: 'emp-4', name: 'Diana Miller', avatarUrl: 'https://picsum.photos/seed/diana/40/40' },
 ];
 
-const now = new Date();
+export const INITIAL_SPACES: Space[] = [
+  {
+    id: 'space-1',
+    name: 'Main HQ',
+    joinCode: 'HQ-2024',
+    ownerId: 'emp-1', // Alice owns it
+    members: ['emp-1', 'emp-2', 'emp-3', 'emp-4']
+  },
+  {
+    id: 'space-2',
+    name: 'Side Project',
+    joinCode: 'SIDE-01',
+    ownerId: 'emp-1',
+    members: ['emp-1']
+  }
+];
 
 export const INITIAL_TASKS: Task[] = [
   {
     id: 1,
+    spaceId: 'space-1',
     title: 'Design new landing page mockup',
     description: 'Create a high-fidelity mockup in Figma based on the new brand guidelines. Include mobile and desktop versions.',
     assigneeId: 'emp-1',
@@ -32,6 +48,7 @@ export const INITIAL_TASKS: Task[] = [
   },
   {
     id: 2,
+    spaceId: 'space-1',
     title: 'Develop API for user authentication',
     description: 'Set up JWT-based authentication endpoints: /login, /register, /logout. Use bcrypt for password hashing.',
     assigneeId: 'emp-2',
@@ -49,6 +66,7 @@ export const INITIAL_TASKS: Task[] = [
   },
   {
     id: 3,
+    spaceId: 'space-1',
     title: 'Write blog post about Q3 results',
     description: 'Draft a 1000-word blog post summarizing the key achievements and financial results from the third quarter.',
     assigneeId: 'emp-3',
@@ -65,6 +83,7 @@ export const INITIAL_TASKS: Task[] = [
   },
   {
     id: 4,
+    spaceId: 'space-1',
     title: 'Fix bug in payment processing',
     description: 'Users are reporting a 500 error when using PayPal. Investigate logs and resolve the issue.',
     assigneeId: 'emp-2',
@@ -80,6 +99,7 @@ export const INITIAL_TASKS: Task[] = [
   },
   {
     id: 5,
+    spaceId: 'space-1',
     title: 'Plan team offsite event',
     description: 'Research venues, get quotes for catering, and create a schedule of activities for the annual team offsite.',
     assigneeId: 'emp-4',
@@ -95,6 +115,7 @@ export const INITIAL_TASKS: Task[] = [
   },
   {
     id: 6,
+    spaceId: 'space-1',
     title: 'Deploy authentication API to staging',
     description: 'Once the API is developed, deploy it to the staging environment for QA testing.',
     assigneeId: 'emp-2',

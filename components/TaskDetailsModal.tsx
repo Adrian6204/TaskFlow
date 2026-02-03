@@ -28,7 +28,7 @@ interface TaskDetailsModalProps {
 const priorityConfig = {
     [Priority.URGENT]: { text: 'text-red-600 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/50' },
     [Priority.HIGH]: { text: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/50' },
-    [Priority.MEDIUM]: { text: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-100 dark:bg-indigo-900/50' },
+    [Priority.MEDIUM]: { text: 'text-primary-600 dark:text-primary-400', bg: 'bg-primary-100 dark:bg-primary-900/50' },
     [Priority.LOW]: { text: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-100 dark:bg-slate-700' },
 };
 
@@ -343,7 +343,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
                                           setShowTagSuggestions(false);
                                       }, 200);
                                   }}
-                                  className="px-2 py-0.5 text-xs border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                                  className="px-2 py-0.5 text-xs border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                                   placeholder="New tag..."
                               />
                           </form>
@@ -384,7 +384,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
           <div className="mb-6 bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
-                    <ClockIcon className={`w-5 h-5 ${task.timerStartTime ? 'text-indigo-600 dark:text-indigo-400 animate-pulse' : 'text-slate-400'}`} />
+                    <ClockIcon className={`w-5 h-5 ${task.timerStartTime ? 'text-primary-600 dark:text-primary-400 animate-pulse' : 'text-slate-400'}`} />
                     <h3 className="font-semibold text-slate-700 dark:text-slate-300">Time Tracking</h3>
                 </div>
                 <span className="text-sm font-mono font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 px-3 py-1 rounded border border-slate-200 dark:border-slate-700">
@@ -398,7 +398,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
                     className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium transition-colors w-full sm:w-auto ${
                         task.timerStartTime 
                             ? 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50' 
-                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                            : 'bg-primary-600 text-white hover:bg-primary-700'
                     }`}
                   >
                       {task.timerStartTime ? (
@@ -440,7 +440,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
                 <button 
                     onClick={handleGenerateSubtasks} 
                     disabled={isGeneratingSubtasks}
-                    className="flex items-center text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 disabled:opacity-50"
+                    className="flex items-center text-xs font-medium text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 disabled:opacity-50"
                 >
                     <SparklesIcon className={`w-4 h-4 mr-1 ${isGeneratingSubtasks ? 'animate-spin' : ''}`} />
                     {isGeneratingSubtasks ? 'Generating...' : 'Auto-Generate'}
@@ -448,7 +448,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
             </div>
             
             <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mb-4">
-                <div className="bg-indigo-600 h-2 rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%` }}></div>
+                <div className="bg-primary-600 h-2 rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%` }}></div>
             </div>
 
             <ul className="space-y-2 mb-3">
@@ -458,7 +458,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
                             type="checkbox" 
                             checked={subtask.isCompleted} 
                             onChange={() => handleToggleSubtask(subtask.id)}
-                            className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
+                            className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded cursor-pointer"
                         />
                         <span className={`ml-2 text-sm flex-grow ${subtask.isCompleted ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-300'}`}>
                             {subtask.title}
@@ -479,7 +479,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
                     value={newSubtaskTitle}
                     onChange={(e) => setNewSubtaskTitle(e.target.value)}
                     placeholder="Add a new subtask..."
-                    className="flex-grow text-sm px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                    className="flex-grow text-sm px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                 />
                 <button type="submit" disabled={!newSubtaskTitle.trim()} className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-50">
                     <PlusIcon className="w-5 h-5" />
@@ -489,7 +489,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
           
           <div className="border-t border-slate-200 dark:border-slate-700 pt-6 mb-6">
             <div className="flex items-center gap-2 mb-4">
-                <SparklesIcon className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
+                <SparklesIcon className="w-6 h-6 text-primary-500 dark:text-primary-400" />
                 <h3 className="font-semibold text-slate-700 dark:text-slate-300">AI Assistant</h3>
             </div>
              <form onSubmit={handleAskAI} className="mb-4">
@@ -498,9 +498,9 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
                 onChange={(e) => setAiQuestion(e.target.value)}
                 placeholder="Ask AI for help with this task..."
                 rows={2}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white resize-y"
+                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white resize-y"
               />
-              <button type="submit" className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 w-full sm:w-auto" disabled={!aiQuestion.trim() || isAiLoading}>
+              <button type="submit" className="mt-2 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 w-full sm:w-auto" disabled={!aiQuestion.trim() || isAiLoading}>
                 {isAiLoading ? 'Thinking...' : 'Ask AI'}
               </button>
             </form>
@@ -544,9 +544,9 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
                     onChange={(e) => setNewComment(e.target.value)}
                     placeholder="Add a comment..."
                     rows={1}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white resize-none"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white resize-none"
                 />
-                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50" disabled={!newComment.trim()}>
+                <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50" disabled={!newComment.trim()}>
                     Send
                 </button>
             </form>
