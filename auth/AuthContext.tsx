@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { User, Role, AuthContextType } from '../types';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -10,6 +10,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      return;
+    }
+
     // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
@@ -34,22 +39,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const mapSupabaseUser = async (sbUser: any) => {
-      // Fetch public profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', sbUser.id)
-        .single();
+      try {
+        // Fetch public profile
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', sbUser.id)
+            .single();
 
-      setUser({
-          username: profile?.username || sbUser.email?.split('@')[0],
-          role: 'user', // Default role, specific space roles handled in data layer
-          employeeId: sbUser.id,
-      });
-      setLoading(false);
+        setUser({
+            username: profile?.username || sbUser.email?.split('@')[0],
+            role: 'user', // Default role, specific space roles handled in data layer
+            employeeId: sbUser.id,
+        });
+      } catch (error) {
+        console.error("Error mapping user", error);
+      } finally {
+        setLoading(false);
+      }
   };
 
   const login = async (email: string, password: string): Promise<void> => {
+    if (!isSupabaseConfigured) throw new Error("Supabase not configured");
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -59,6 +70,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signup = async (email: string, password: string, fullName: string): Promise<void> => {
+    if (!isSupabaseConfigured) throw new Error("Supabase not configured");
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -74,15 +86,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = async () => {
+    if (!isSupabaseConfigured) return;
     await supabase.auth.signOut();
     setUser(null);
   };
 
   const updateUser = async (updates: Partial<User>) => {
-      // Only updates local state for now, ideally updates 'profiles' table
       if (user) {
           setUser({ ...user, ...updates });
-          if (updates.username) {
+          if (updates.username && isSupabaseConfigured) {
               await supabase.from('profiles').update({ username: updates.username }).eq('id', user.employeeId);
           }
       }

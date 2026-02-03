@@ -20,8 +20,46 @@ import JoinSpaceModal from './components/JoinSpaceModal';
 import SpaceSettingsModal from './components/SpaceSettingsModal';
 import { Cog6ToothIcon } from './components/icons/Cog6ToothIcon';
 import * as dataService from './services/supabaseService';
+import { isSupabaseConfigured } from './lib/supabaseClient';
 
 const App: React.FC = () => {
+  // Check configuration first
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
+        <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-xl shadow-xl p-8 border border-slate-200 dark:border-slate-700">
+          <div className="flex items-center gap-4 mb-6">
+             <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+             </div>
+             <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Setup Required</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Database connection missing.</p>
+             </div>
+          </div>
+          
+          <div className="space-y-4">
+              <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
+                  <p className="text-sm text-slate-600 dark:text-slate-300 mb-2 font-medium">
+                      To connect the database, add these variables to Vercel:
+                  </p>
+                  <div className="font-mono text-xs text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 p-3 rounded border border-slate-200 dark:border-slate-700">
+                    SUPABASE_URL<br/>
+                    SUPABASE_ANON_KEY
+                  </div>
+              </div>
+
+              <div className="text-xs text-center text-slate-400 dark:text-slate-500 mt-4">
+                  After adding the variables, redeploy the project.
+              </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const { user, updateUser, logout } = useAuth();
   const { showNotification } = useNotification();
   
@@ -156,8 +194,10 @@ const App: React.FC = () => {
       if (!user) return;
       try {
           const joinedSpace = await dataService.joinSpace(code, user.employeeId);
-          // Refresh list to be safe, or push
-          setSpaces([...spaces, { ...joinedSpace, members: [...joinedSpace.members, user.employeeId] }]);
+          // Check if already in list to avoid duplicates
+          if (!spaces.find(s => s.id === joinedSpace.id)) {
+              setSpaces([...spaces, { ...joinedSpace, members: [...joinedSpace.members, user.employeeId] }]);
+          }
           setActiveSpaceId(joinedSpace.id);
           showNotification(`Joined "${joinedSpace.name}"`);
       } catch (err: any) {
@@ -177,7 +217,7 @@ const App: React.FC = () => {
           ...data,
           id: id || undefined,
           spaceId: activeSpaceId,
-          assigneeId: data.assigneeId || user.employeeId // Default to self if missing
+          assigneeId: data.assigneeId || user.employeeId 
       };
 
       try {
@@ -211,7 +251,6 @@ const App: React.FC = () => {
 
     try {
         await dataService.upsertTask(updatedTask);
-        // Also update blocked tasks in DB if any? For simplicity, we just updated local state.
         logActivity(`moved "${taskToUpdate.title}" to ${newStatus}`);
         showNotification(`Moved to ${newStatus}`, 'success');
     } catch (err) {
@@ -404,7 +443,6 @@ const App: React.FC = () => {
               } catch(err) { console.error(err); }
           }}
           onUpdateTask={async (updated) => {
-            // Need to convert back to saving format or just use the whole object if upsert handles it
             try {
                 await dataService.upsertTask(updated);
                 setTasks(tasks.map(t => t.id === updated.id ? updated : t));
@@ -442,7 +480,6 @@ const App: React.FC = () => {
             currentUserEmployee={currentUserEmployee}
             onSave={(name, avatar) => {
               updateUser({ username: name });
-              // Avatar persistence would go here if extending profile table
             }}
             onLogout={() => {
               setProfileModalOpen(false);

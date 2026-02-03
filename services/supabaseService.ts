@@ -3,7 +3,6 @@ import { supabase } from '../lib/supabaseClient';
 import { Task, Space, Employee, TaskStatus, Priority, Comment, Subtask, TimeLogEntry } from '../types';
 
 // --- Types for DB Insert/Update ---
-// These roughly match the table structure
 interface DbTask {
   id?: number;
   space_id: string;
@@ -65,7 +64,7 @@ const mapDbSpaceToApp = (dbSpace: any): Space => ({
   name: dbSpace.name,
   joinCode: dbSpace.join_code,
   ownerId: dbSpace.owner_id,
-  members: [], // Populated separately or via join
+  members: [], 
 });
 
 const mapDbProfileToEmployee = (dbProfile: any): Employee => ({
@@ -77,7 +76,6 @@ const mapDbProfileToEmployee = (dbProfile: any): Employee => ({
 // --- Services ---
 
 export const getSpaces = async (userId: string) => {
-  // Get spaces where user is a member
   const { data, error } = await supabase
     .from('spaces')
     .select('*, space_members!inner(user_id)')
@@ -85,7 +83,6 @@ export const getSpaces = async (userId: string) => {
 
   if (error) throw error;
   
-  // For each space, fetch member IDs (simple approach)
   const spacesWithMembers = await Promise.all(data.map(async (s: any) => {
       const { data: memberData } = await supabase.from('space_members').select('user_id').eq('space_id', s.id);
       return {
@@ -99,8 +96,7 @@ export const getSpaces = async (userId: string) => {
 
 export const createSpace = async (name: string, userId: string) => {
   const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-  
-  // 1. Create Space
+
   const { data: spaceData, error: spaceError } = await supabase
     .from('spaces')
     .insert({ name, join_code: joinCode, owner_id: userId })
@@ -109,7 +105,6 @@ export const createSpace = async (name: string, userId: string) => {
 
   if (spaceError) throw spaceError;
 
-  // 2. Add creator as member
   const { error: memberError } = await supabase
     .from('space_members')
     .insert({ space_id: spaceData.id, user_id: userId, role: 'admin' });
@@ -120,7 +115,6 @@ export const createSpace = async (name: string, userId: string) => {
 };
 
 export const joinSpace = async (code: string, userId: string) => {
-  // 1. Find space
   const { data: spaceData, error: spaceError } = await supabase
     .from('spaces')
     .select()
@@ -129,7 +123,6 @@ export const joinSpace = async (code: string, userId: string) => {
 
   if (spaceError) throw new Error('Invalid join code');
 
-  // 2. Check if already member
   const { data: memberCheck } = await supabase
     .from('space_members')
     .select()
@@ -139,7 +132,6 @@ export const joinSpace = async (code: string, userId: string) => {
 
   if (memberCheck) throw new Error('Already a member of this space');
 
-  // 3. Add member
   const { error: joinError } = await supabase
     .from('space_members')
     .insert({ space_id: spaceData.id, user_id: userId });
@@ -170,7 +162,7 @@ export const upsertTask = async (task: Partial<Task> & { spaceId: string, title:
     space_id: task.spaceId,
     title: task.title,
     description: task.description || '',
-    assignee_id: task.assigneeId || '', // Ensure valid UUID or handle null
+    assignee_id: task.assigneeId || '', 
     due_date: task.dueDate || new Date().toISOString(),
     status: task.status || 'To Do',
     priority: task.priority || 'Medium',
@@ -192,7 +184,6 @@ export const upsertTask = async (task: Partial<Task> & { spaceId: string, title:
   
   const savedTask = mapDbTaskToApp(data);
 
-  // Handle Subtasks (Naive implementation: delete all and recreate for updates)
   if (task.subtasks) {
       if (task.id) {
           await supabase.from('subtasks').delete().eq('task_id', task.id);
