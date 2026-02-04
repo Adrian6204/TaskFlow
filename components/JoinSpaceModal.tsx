@@ -48,7 +48,7 @@ const JoinSpaceModal: React.FC<JoinSpaceModalProps> = ({ isOpen, onClose, onJoin
               type="text"
               autoFocus
               value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              onChange={(e) => setCode(e.target.value.toUpperCase().replace(/\s/g, ''))}
               placeholder="e.g. HQ-2024"
               className="w-full px-4 py-3 text-center text-2xl font-mono tracking-widest uppercase border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
             />

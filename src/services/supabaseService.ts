@@ -121,7 +121,7 @@ export const joinSpace = async (code: string, userId: string) => {
 
   // 2. Call the RPC function `join_space_v2`. 
   // This function is SECURITY DEFINER, allowing it to bypass RLS to find the space.
-  const { data, error } = await supabase.rpc('join_space_v2', { input_code: cleanCode });
+  const { data: spaceData, error } = await supabase.rpc('join_space_v2', { input_code: cleanCode });
 
   if (error) {
     console.error('Supabase RPC Error join_space_v2:', error);
@@ -129,15 +129,20 @@ export const joinSpace = async (code: string, userId: string) => {
     throw new Error(error.message || 'Failed to join space. Please check the code.');
   }
   
-  if (!data) {
+  if (!spaceData) {
       console.error('No data returned from join_space_v2');
       throw new Error('Space not found');
   }
 
-  // 3. Return the mapped space data
+  // 3. Fetch the full list of members for this space
+  // This ensures that when the user joins (or switches to) the space, they see all colleagues immediately.
+  const { data: memberData } = await supabase.from('space_members').select('user_id').eq('space_id', spaceData.id);
+  const memberIds = memberData ? memberData.map((m: any) => m.user_id) : [userId];
+
+  // 4. Return the mapped space data with full members list
   return { 
-      ...mapDbSpaceToApp(data), 
-      members: [userId] 
+      ...mapDbSpaceToApp(spaceData), 
+      members: memberIds 
   };
 };
 

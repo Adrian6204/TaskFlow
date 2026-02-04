@@ -194,12 +194,23 @@ const App: React.FC = () => {
       if (!user) return;
       try {
           const joinedSpace = await dataService.joinSpace(code, user.employeeId);
-          // Check if already in list to avoid duplicates
-          if (!spaces.find(s => s.id === joinedSpace.id)) {
-              setSpaces([...spaces, { ...joinedSpace, members: [...joinedSpace.members, user.employeeId] }]);
+          
+          // Check if space is already in the list
+          const existingSpaceIndex = spaces.findIndex(s => s.id === joinedSpace.id);
+          
+          if (existingSpaceIndex >= 0) {
+              // Update existing space (in case members changed)
+              const updatedSpaces = [...spaces];
+              updatedSpaces[existingSpaceIndex] = joinedSpace;
+              setSpaces(updatedSpaces);
+              showNotification(`Switched to "${joinedSpace.name}"`);
+          } else {
+              // Add new space
+              setSpaces([...spaces, joinedSpace]);
+              showNotification(`Joined "${joinedSpace.name}"`);
           }
+          
           setActiveSpaceId(joinedSpace.id);
-          showNotification(`Joined "${joinedSpace.name}"`);
       } catch (err: any) {
           showNotification(err.message, 'error');
       }

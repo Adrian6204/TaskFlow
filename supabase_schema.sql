@@ -3,7 +3,6 @@
 create extension if not exists "uuid-ossp";
 
 -- 1. CLEANUP: Drop old/conflicting functions
--- Run this to remove the "query you added yesterday" if it was named join_space or join_space_by_code
 DROP FUNCTION IF EXISTS public.join_space(text);
 DROP FUNCTION IF EXISTS public.join_space_by_code(text);
 
@@ -20,14 +19,16 @@ begin
 end;
 $$;
 
--- 3. HELPER: Secure Join Function V2
--- This is the "New Query" your app is trying to use.
+-- 3. HELPER: Secure Join Function V2 (Idempotent Fix)
+-- This function now returns the space data even if the user is already a member,
+-- avoiding the "You are already a member" error.
 create or replace function public.join_space_v2(input_code text)
 returns json language plpgsql security definer as $$
 declare
   _space_id uuid;
   _space_data record;
   _clean_code text;
+  _is_member boolean;
 begin
   -- Normalize input: Uppercase and trimmed
   _clean_code := upper(trim(input_code));
@@ -38,18 +39,21 @@ begin
   where upper(join_code) = _clean_code;
   
   if _space_id is null then
-    -- Specific error message to help debugging
     raise exception 'Space with code % not found', _clean_code;
   end if;
 
   -- Check if user is already a member
-  if exists (select 1 from public.space_members where space_id = _space_id and user_id = auth.uid()) then
-    raise exception 'You are already a member of this space.';
-  end if;
+  select exists (
+    select 1 from public.space_members 
+    where space_id = _space_id 
+    and user_id = auth.uid()
+  ) into _is_member;
 
-  -- Insert new member
-  insert into public.space_members (space_id, user_id, role)
-  values (_space_id, auth.uid(), 'member');
+  -- Only insert if NOT a member
+  if not _is_member then
+    insert into public.space_members (space_id, user_id, role)
+    values (_space_id, auth.uid(), 'member');
+  end if;
 
   -- Return the space details so the UI can update
   select * from public.spaces where id = _space_id into _space_data;
