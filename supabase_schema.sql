@@ -2,7 +2,7 @@
 -- Enable UUID extension for unique IDs
 create extension if not exists "uuid-ossp";
 
--- HELPER FUNCTION: Check membership safely (Bypasses RLS to avoid recursion)
+-- 1. HELPER: Check membership safely (Bypasses RLS)
 create or replace function public.is_space_member(_space_id uuid)
 returns boolean language plpgsql security definer as $$
 begin
@@ -15,41 +15,44 @@ begin
 end;
 $$;
 
--- HELPER FUNCTION: Join a space by code safely
--- 1. Drop old signature to ensure clean slate
-drop function if exists public.join_space_by_code(text);
-
--- 2. Create new robust function
-create or replace function public.join_space_by_code(input_code text)
+-- 2. HELPER: Secure Join Function V2
+-- Renamed to avoid conflicts with previous versions
+create or replace function public.join_space_v2(input_code text)
 returns json language plpgsql security definer as $$
 declare
   _space_id uuid;
   _space_data record;
 begin
-  -- Find the space ID (Case insensitive, trimmed)
+  -- Search for the space ID using exact case-insensitive match
   select id into _space_id 
   from public.spaces 
   where upper(join_code) = upper(trim(input_code));
   
   if _space_id is null then
-    raise exception 'Invalid join code';
+    raise exception 'Space with this join code not found.';
   end if;
 
-  -- Check if already a member
+  -- Check if user is already a member
   if exists (select 1 from public.space_members where space_id = _space_id and user_id = auth.uid()) then
-    raise exception 'You are already a member of this space';
+    raise exception 'You are already a member of this space.';
   end if;
 
   -- Insert new member
   insert into public.space_members (space_id, user_id, role)
   values (_space_id, auth.uid(), 'member');
 
-  -- Return space details
+  -- Return the space details so the UI can update
   select * from public.spaces where id = _space_id into _space_data;
   return row_to_json(_space_data);
 end;
 $$;
 
+-- Grant permission to allow authenticated users to call this function
+grant execute on function public.join_space_v2(text) to authenticated;
+grant execute on function public.join_space_v2(text) to service_role;
+
+
+-- RE-APPLY TABLE SCHEMAS AND POLICIES TO BE SAFE
 
 -- 1. PROFILES
 create table if not exists public.profiles (
