@@ -144,25 +144,213 @@ const TaskGroup: React.FC<{
 };
 
 const TaskListView: React.FC<TaskListViewProps> = ({ tasks, employees, onEditTask, onViewTask, onUpdateTaskStatus, onToggleTimer }) => {
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+
+  const getTaskStats = (employeeId: string) => {
+    const employeeTasks = tasks.filter(t => t.assigneeId === employeeId);
+    return {
+      total: employeeTasks.length,
+      completed: employeeTasks.filter(t => t.status === TaskStatus.DONE).length,
+      inProgress: employeeTasks.filter(t => t.status === TaskStatus.IN_PROGRESS).length,
+      todo: employeeTasks.filter(t => t.status === TaskStatus.TODO).length,
+    };
+  };
+
+  // Get today's tasks (tasks due today or overdue)
+  const getTodaysTasks = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    return tasks.filter(t => {
+      const dueDate = new Date(t.dueDate);
+      dueDate.setHours(0, 0, 0, 0);
+      return (dueDate <= tomorrow && t.status !== TaskStatus.DONE);
+    });
+  };
+
+  const todaysTasks = getTodaysTasks();
+
+  // Filter tasks based on selected employee
+  const filteredTasks = selectedEmployeeId 
+    ? tasks.filter(t => t.assigneeId === selectedEmployeeId)
+    : tasks;
+
   return (
-    <div className="pb-10">
-      {TASK_STATUSES.map(status => (
-        <TaskGroup
-          key={status}
-          status={status}
-          tasks={tasks.filter(t => t.status === status)}
-          employees={employees}
-          onEditTask={onEditTask}
-          onViewTask={onViewTask}
-          onUpdateTaskStatus={onUpdateTaskStatus}
-          onToggleTimer={onToggleTimer}
-        />
-      ))}
-      {tasks.length === 0 && (
-          <div className="text-center py-20 text-slate-500">
-              <p>No tasks found in this view.</p>
+    <div className="pb-10 space-y-6">
+      {/* Today's Tasks Section */}
+      {todaysTasks.length > 0 && (
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl border border-blue-200/50 dark:border-blue-800/50 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
+              <ClockIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              Today's Tasks
+            </h3>
+            <span className="px-3 py-1 bg-blue-600 dark:bg-blue-500 text-white text-xs font-bold rounded-full">
+              {todaysTasks.length}
+            </span>
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {todaysTasks.slice(0, 6).map(task => {
+              const assignee = employees.find(e => e.id === task.assigneeId);
+              return (
+                <div
+                  key={task.id}
+                  onClick={() => onViewTask(task)}
+                  className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-lg p-3 border border-neutral-200/50 dark:border-neutral-800/50 hover:shadow-md transition-all duration-200 cursor-pointer group"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    {assignee && (
+                      <img src={assignee.avatarUrl} className="w-6 h-6 rounded-full border border-neutral-200 dark:border-neutral-700" alt="" />
+                    )}
+                    <p className="text-sm font-semibold text-neutral-900 dark:text-white truncate flex-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      {task.title}
+                    </p>
+                  </div>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    Due: {new Date(task.dueDate).toLocaleDateString()}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+          {todaysTasks.length > 6 && (
+            <p className="text-xs text-center text-neutral-500 dark:text-neutral-400 mt-3">
+              + {todaysTasks.length - 6} more tasks
+            </p>
+          )}
+        </div>
       )}
+
+      {/* Team Members Section */}
+      {employees.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              Team Members <span className="text-sm font-normal text-neutral-500 dark:text-neutral-400">({employees.length} members in this space)</span>
+            </h3>
+            {selectedEmployeeId && (
+              <button
+                onClick={() => setSelectedEmployeeId(null)}
+                className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Show All Tasks
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {employees.map((employee, index) => {
+              const stats = getTaskStats(employee.id);
+              const completionRate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+              const isSelected = selectedEmployeeId === employee.id;
+
+              return (
+                <div 
+                  key={employee.id}
+                  onClick={() => setSelectedEmployeeId(isSelected ? null : employee.id)}
+                  className={`bg-white dark:bg-neutral-900 rounded-2xl border-2 p-5 transition-all duration-300 cursor-pointer hover:shadow-xl ${
+                    isSelected 
+                      ? 'border-blue-500 dark:border-blue-400 shadow-lg shadow-blue-500/20' 
+                      : 'border-neutral-200/50 dark:border-neutral-800/50 hover:border-neutral-300 dark:hover:border-neutral-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-600 flex items-center justify-center text-xl font-bold text-neutral-700 dark:text-neutral-200 uppercase">
+                          {employee.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-neutral-900 rounded-full"></div>
+                      </div>
+                      <div>
+                        <h4 className="text-base font-bold text-neutral-900 dark:text-white">
+                          {employee.name}
+                        </h4>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                          {stats.total} tasks assigned
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Task Progress */}
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Task Progress</span>
+                      <span className="text-sm font-bold text-neutral-900 dark:text-white">{completionRate}%</span>
+                    </div>
+                    <div className="h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-blue-500 to-green-500 rounded-full transition-all duration-500"
+                        style={{ width: `${completionRate}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="text-center p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl">
+                      <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.todo}</p>
+                      <p className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mt-1">To Do</p>
+                    </div>
+                    <div className="text-center p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl">
+                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.inProgress}</p>
+                      <p className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mt-1">Active</p>
+                    </div>
+                    <div className="text-center p-3 bg-green-50 dark:bg-green-500/10 rounded-xl">
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.completed}</p>
+                      <p className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mt-1">Done</p>
+                    </div>
+                  </div>
+
+                  {isSelected && (
+                    <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-700">
+                      <p className="text-xs font-medium text-blue-600 dark:text-blue-400 text-center">
+                        Showing {stats.total} tasks below ↓
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Tasks Section */}
+      <div>
+        {selectedEmployeeId && (
+          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 flex items-center justify-between">
+            <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+              Showing tasks for: <span className="font-bold">{employees.find(e => e.id === selectedEmployeeId)?.name}</span>
+            </p>
+            <button
+              onClick={() => setSelectedEmployeeId(null)}
+              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Clear Filter
+            </button>
+          </div>
+        )}
+        {TASK_STATUSES.map(status => (
+          <TaskGroup
+            key={status}
+            status={status}
+            tasks={filteredTasks.filter(t => t.status === status)}
+            employees={employees}
+            onEditTask={onEditTask}
+            onViewTask={onViewTask}
+            onUpdateTaskStatus={onUpdateTaskStatus}
+            onToggleTimer={onToggleTimer}
+          />
+        ))}
+        {filteredTasks.length === 0 && (
+            <div className="text-center py-20 text-slate-500">
+                <p>No tasks found {selectedEmployeeId ? 'for this team member' : 'in this view'}.</p>
+            </div>
+        )}
+      </div>
     </div>
   );
 };

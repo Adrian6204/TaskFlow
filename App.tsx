@@ -19,6 +19,7 @@ import ProfileModal from './components/ProfileModal';
 import CreateSpaceModal from './components/CreateSpaceModal';
 import JoinSpaceModal from './components/JoinSpaceModal';
 import SpaceSettingsModal from './components/SpaceSettingsModal';
+import SpaceSettingsView from './components/SpaceSettingsView';
 import GanttChart from './components/GanttChart';
 import Whiteboard from './components/Whiteboard';
 import MembersView from './components/MembersView';
@@ -108,8 +109,8 @@ const Dashboard: React.FC = () => {
     if (path.includes('/dashboard')) return 'dashboard';
     if (path.includes('/gantt')) return 'gantt';
     if (path.includes('/whiteboard')) return 'whiteboard';
-    if (path.includes('/members')) return 'members';
     if (path.includes('/overview')) return 'overview';
+    if (path.includes('/settings')) return 'settings';
     if (path.includes('/home')) return 'home';
     return 'home';
   };
@@ -178,7 +179,103 @@ const Dashboard: React.FC = () => {
   const loadTasks = async (spaceId: string) => {
       try {
           const loadedTasks = await dataService.getTasks(spaceId);
-          setTasks(loadedTasks);
+          
+          // If no tasks exist, create mock data
+          if (loadedTasks.length === 0) {
+              const mockTasks: Partial<Task>[] = [
+                  {
+                      spaceId,
+                      title: 'Setup Development Environment',
+                      description: 'Install Node.js, VS Code, and configure project dependencies',
+                      status: TaskStatus.TODO,
+                      priority: Priority.HIGH,
+                      assigneeId: employees.length > 0 ? employees[0].id : '',
+                      tags: ['setup', 'development'],
+                      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                      createdAt: new Date().toISOString(),
+                      createdBy: user?.id || '',
+                      comments: [],
+                      subtasks: [],
+                      timeLogs: []
+                  },
+                  {
+                      spaceId,
+                      title: 'Design UI Mockups',
+                      description: 'Create wireframes and high-fidelity mockups for the dashboard',
+                      status: TaskStatus.IN_PROGRESS,
+                      priority: Priority.HIGH,
+                      assigneeId: employees.length > 1 ? employees[1].id : employees[0]?.id || '',
+                      tags: ['design', 'ui'],
+                      dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+                      createdAt: new Date().toISOString(),
+                      createdBy: user?.id || '',
+                      comments: [],
+                      subtasks: [],
+                      timeLogs: []
+                  },
+                  {
+                      spaceId,
+                      title: 'API Integration',
+                      description: 'Connect frontend with backend API endpoints',
+                      status: TaskStatus.IN_PROGRESS,
+                      priority: Priority.MEDIUM,
+                      assigneeId: employees.length > 0 ? employees[0].id : '',
+                      tags: ['backend', 'api'],
+                      dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+                      createdAt: new Date().toISOString(),
+                      createdBy: user?.id || '',
+                      comments: [],
+                      subtasks: [],
+                      timeLogs: []
+                  },
+                  {
+                      spaceId,
+                      title: 'Write Unit Tests',
+                      description: 'Create comprehensive test coverage for core functionality',
+                      status: TaskStatus.TODO,
+                      priority: Priority.MEDIUM,
+                      assigneeId: employees.length > 2 ? employees[2].id : employees[0]?.id || '',
+                      tags: ['testing', 'quality'],
+                      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+                      createdAt: new Date().toISOString(),
+                      createdBy: user?.id || '',
+                      comments: [],
+                      subtasks: [],
+                      timeLogs: []
+                  },
+                  {
+                      spaceId,
+                      title: 'Deploy to Production',
+                      description: 'Setup CI/CD pipeline and deploy application to production',
+                      status: TaskStatus.TODO,
+                      priority: Priority.LOW,
+                      assigneeId: employees.length > 1 ? employees[1].id : employees[0]?.id || '',
+                      tags: ['deployment', 'devops'],
+                      dueDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
+                      createdAt: new Date().toISOString(),
+                      createdBy: user?.id || '',
+                      comments: [],
+                      subtasks: [],
+                      timeLogs: []
+                  }
+              ];
+              
+              // Save mock tasks to database
+              try {
+                  const savedTasks: Task[] = [];
+                  for (const mockTask of mockTasks) {
+                      const savedTask = await dataService.upsertTask(mockTask);
+                      savedTasks.push(savedTask);
+                  }
+                  setTasks(savedTasks);
+                  showNotification("Sample tasks added to workspace", 'success');
+              } catch (saveErr) {
+                  console.error("Failed to save mock tasks", saveErr);
+                  showNotification("Failed to create sample tasks", 'error');
+              }
+          } else {
+              setTasks(loadedTasks);
+          }
       } catch (err) {
           console.error("Failed to load tasks", err);
           showNotification("Failed to load tasks", 'error');
@@ -193,7 +290,11 @@ const Dashboard: React.FC = () => {
 
   const filteredTasks = useMemo(() => {
     if (!activeSpaceId) return [];
-    let filtered = tasks;
+    
+    // First filter by active space
+    let filtered = tasks.filter(task => task.spaceId === activeSpaceId);
+    
+    // Then filter by search term if present
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(task => 
@@ -223,10 +324,10 @@ const Dashboard: React.FC = () => {
     setActivityLogs(prev => [newLog, ...prev].slice(0, 50));
   };
 
-  const handleCreateSpace = async (name: string) => {
+  const handleCreateSpace = async (name: string, description?: string) => {
       if (!user) return;
       try {
-          const newSpace = await dataService.createSpace(name, user.employeeId);
+          const newSpace = await dataService.createSpace(name, user.employeeId, description);
           setSpaces([...spaces, newSpace]);
           setActiveSpaceId(newSpace.id);
           showNotification(`Created space "${name}"`);
@@ -258,6 +359,48 @@ const Dashboard: React.FC = () => {
           setActiveSpaceId(joinedSpace.id);
       } catch (err: any) {
           showNotification(err.message, 'error');
+      }
+  };
+
+  const handleAddMemberToSpace = async (spaceId: string, memberId: string) => {
+      try {
+          await dataService.addMemberToSpace(spaceId, memberId);
+          const updatedSpace = await dataService.getSpaceById(spaceId);
+          setSpaces(spaces.map(s => s.id === spaceId ? updatedSpace : s));
+          const memberName = employees.find(e => e.id === memberId)?.name || 'Member';
+          showNotification(`${memberName} added to workspace`, 'success');
+      } catch (err: any) {
+          showNotification(err.message || 'Failed to add member', 'error');
+      }
+  };
+
+  const handleRemoveMemberFromSpace = async (spaceId: string, memberId: string) => {
+      try {
+          await dataService.removeMemberFromSpace(spaceId, memberId);
+          const updatedSpace = await dataService.getSpaceById(spaceId);
+          setSpaces(spaces.map(s => s.id === spaceId ? updatedSpace : s));
+          const memberName = employees.find(e => e.id === memberId)?.name || 'Member';
+          showNotification(`${memberName} removed from workspace`, 'success');
+      } catch (err: any) {
+          showNotification(err.message || 'Failed to remove member', 'error');
+      }
+  };
+
+  const handleDeleteSpace = async (spaceId: string) => {
+      try {
+          await dataService.deleteSpace(spaceId);
+          setSpaces(spaces.filter(s => s.id !== spaceId));
+          
+          // If the deleted space was active, switch to another space or null
+          if (activeSpaceId === spaceId) {
+              const remainingSpaces = spaces.filter(s => s.id !== spaceId);
+              setActiveSpaceId(remainingSpaces.length > 0 ? remainingSpaces[0].id : null);
+              setCurrentView('dashboard');
+          }
+          
+          showNotification('Workspace deleted successfully', 'success');
+      } catch (err: any) {
+          showNotification(err.message || 'Failed to delete workspace', 'error');
       }
   };
 
@@ -333,6 +476,7 @@ const Dashboard: React.FC = () => {
             // Refetch or manual update? Manual for speed.
             updated = { ...task, timerStartTime: null, timeLogs: [{ id: 'temp', startTime: task.timerStartTime, endTime: now.toISOString(), duration: dur }, ...(task.timeLogs || [])] };
             logActivity(`logged time on "${task.title}"`);
+            showNotification(`Timer stopped: ${Math.floor(dur / 1000 / 60)}m ${Math.floor((dur / 1000) % 60)}s`, 'success');
         } catch(err) { showNotification("Failed to log time", 'error'); return; }
     } else {
         // Start
@@ -340,9 +484,15 @@ const Dashboard: React.FC = () => {
             await dataService.upsertTask({ ...task, timerStartTime: now.toISOString() });
             updated = { ...task, timerStartTime: now.toISOString() };
             logActivity(`started timer on "${task.title}"`);
+            showNotification("Timer started!", 'success');
         } catch(err) { showNotification("Failed to start timer", 'error'); return; }
     }
     setTasks(tasks.map(t => t.id === id ? updated : t));
+    
+    // Update selectedTask if it's the same task being updated
+    if (selectedTask && selectedTask.id === id) {
+        setSelectedTask(updated);
+    }
   };
 
   if (!user) return null;
@@ -357,7 +507,7 @@ const Dashboard: React.FC = () => {
         currentView={currentView}
         onSelectSpace={(id) => {
           setActiveSpaceId(id);
-          if (['home', 'overview', 'members', 'whiteboard'].includes(currentView)) {
+          if (['home', 'overview', 'whiteboard'].includes(currentView)) {
             // Stay on same view when switching spaces
           }
         }}
@@ -373,34 +523,23 @@ const Dashboard: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
-        <Header 
-          activeSpace={currentSpace ? currentSpace.name : 'No Space Selected'}
-          currentView={currentView}
-          onViewChange={setCurrentView}
-          onAddTask={() => activeSpaceId ? handleOpenAddTaskModal() : showNotification("Select a space first", 'error')} 
-          onGenerateTasks={() => activeSpaceId ? setGenerateTaskModalOpen(true) : showNotification("Select a space first", 'error')}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          user={user}
-        />
+        {/* Header - Only show for workspace views */}
+        {['list', 'board', 'calendar', 'gantt', 'dashboard', 'settings'].includes(currentView) && (
+          <Header 
+            activeSpace={currentSpace ? currentSpace.name : 'No Space Selected'}
+            currentView={currentView}
+            onViewChange={setCurrentView}
+            onAddTask={() => activeSpaceId ? handleOpenAddTaskModal() : showNotification("Select a space first", 'error')} 
+            onGenerateTasks={() => activeSpaceId ? setGenerateTaskModalOpen(true) : showNotification("Select a space first", 'error')}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            user={user}
+          />
+        )}
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-white/10 scrollbar-track-transparent">
           <div className="max-w-[1600px] mx-auto animate-in fade-in duration-500">
             
-            {/* Context Header for Space */}
-            {activeSpaceId && (
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{currentSpace?.name}</h1>
-                    <button 
-                        onClick={() => setSpaceSettingsModalOpen(true)}
-                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
-                    >
-                        <Cog6ToothIcon className="w-4 h-4" />
-                        Space Settings
-                    </button>
-                </div>
-            )}
-
             {/* Home View - Always accessible */}
             {currentView === 'home' && (
                 <HomeView 
@@ -416,11 +555,6 @@ const Dashboard: React.FC = () => {
                 <AdminDashboard tasks={filteredTasks} employees={spaceMembers} activityLogs={activityLogs} />
             )}
 
-            {/* Members View */}
-            {currentView === 'members' && (
-                <MembersView employees={spaceMembers} tasks={filteredTasks} />
-            )}
-
             {/* Whiteboard - Daily Task (Standalone) */}
             {currentView === 'whiteboard' && (
                 <div className="h-[calc(100vh-140px)]">
@@ -429,7 +563,7 @@ const Dashboard: React.FC = () => {
             )}
 
             {/* Space-specific views */}
-            {!activeSpaceId && !['home', 'overview', 'members', 'whiteboard'].includes(currentView) ? (
+            {!activeSpaceId && !['home', 'overview', 'whiteboard'].includes(currentView) ? (
                 <div className="flex flex-col items-center justify-center h-[60vh] text-center p-8">
                     <div className="w-20 h-20 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mb-4">
                         <Cog6ToothIcon className="w-10 h-10 text-neutral-400" />
@@ -445,19 +579,6 @@ const Dashboard: React.FC = () => {
                 </div>
             ) : activeSpaceId && (
                 <>
-                    {/* Context Header for Space */}
-                    {['list', 'board', 'gantt', 'calendar', 'dashboard'].includes(currentView) && (
-                        <div className="flex justify-between items-center mb-6">
-                            <h1 className="text-2xl font-bold text-neutral-800 dark:text-white">{currentSpace?.name}</h1>
-                            <button 
-                                onClick={() => setSpaceSettingsModalOpen(true)}
-                                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all duration-300"
-                            >
-                                <Cog6ToothIcon className="w-4 h-4" />
-                                Settings
-                            </button>
-                        </div>
-                    )}
 
                     {/* View Switching */}
                     {currentView === 'dashboard' && (
@@ -500,6 +621,18 @@ const Dashboard: React.FC = () => {
                         <CalendarView 
                             tasks={filteredTasks}
                             onViewTask={(task) => { setSelectedTask(task); setTaskDetailsModalOpen(true); }}
+                        />
+                    )}
+
+                    {currentView === 'settings' && currentSpace && (
+                        <SpaceSettingsView 
+                            space={currentSpace}
+                            members={spaceMembers}
+                            allEmployees={employees}
+                            currentUserId={user?.employeeId}
+                            onAddMember={handleAddMemberToSpace}
+                            onRemoveMember={handleRemoveMemberFromSpace}
+                            onDeleteSpace={handleDeleteSpace}
                         />
                     )}
                 </>

@@ -79,35 +79,41 @@ const Header: React.FC<HeaderProps> = ({
 
       {/* Right: Actions */}
       <div className="flex items-center gap-3">
-        {/* Search */}
-        <div className="relative group hidden md:block">
-            <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 dark:text-neutral-500 transition-colors group-focus-within:text-neutral-900 dark:group-focus-within:text-white" />
-            <input 
-                type="text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="bg-neutral-100/80 dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-neutral-700/50 rounded-xl py-2 pl-10 pr-4 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 dark:focus:ring-white/10 w-52 transition-all duration-300"
-            />
-        </div>
+        {/* Search - Only show in workspace views */}
+        {['list', 'board', 'calendar'].includes(currentView) && (
+          <div className="relative group hidden md:block">
+              <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 dark:text-neutral-500 transition-colors group-focus-within:text-neutral-900 dark:group-focus-within:text-white" />
+              <input 
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  className="bg-neutral-100/80 dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-neutral-700/50 rounded-xl py-2 pl-10 pr-4 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 dark:focus:ring-white/10 w-52 transition-all duration-300"
+              />
+          </div>
+        )}
 
-        {/* AI Action */}
-        <button
-          onClick={onGenerateTasks}
-          className="p-2.5 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-all duration-300"
-          title="AI Generate Tasks"
-        >
-          <SparklesIcon className="w-5 h-5" />
-        </button>
+        {/* AI Action - Only show in workspace views */}
+        {['list', 'board', 'calendar'].includes(currentView) && (
+          <button
+            onClick={onGenerateTasks}
+            className="p-2.5 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-all duration-300"
+            title="AI Generate Tasks"
+          >
+            <SparklesIcon className="w-5 h-5" />
+          </button>
+        )}
 
-        {/* Add Task */}
-        <button
-          onClick={onAddTask}
-          className="flex items-center gap-2 bg-neutral-900 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-900 text-sm font-semibold py-2.5 px-5 rounded-xl shadow-lg shadow-neutral-900/20 dark:shadow-white/10 transition-all duration-300 active:scale-95"
-        >
-          <PlusIcon className="w-4 h-4" />
-          <span className="hidden sm:inline">New Task</span>
-        </button>
+        {/* Add Task - Only show in workspace views */}
+        {['list', 'board', 'calendar', 'gantt'].includes(currentView) && (
+          <button
+            onClick={onAddTask}
+            className="flex items-center gap-2 bg-neutral-900 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-900 text-sm font-semibold py-2.5 px-5 rounded-xl shadow-lg shadow-neutral-900/20 dark:shadow-white/10 transition-all duration-300 active:scale-95"
+          >
+            <PlusIcon className="w-4 h-4" />
+            <span className="hidden sm:inline">New Task</span>
+          </button>
+        )}
       </div>
     </header>
   );

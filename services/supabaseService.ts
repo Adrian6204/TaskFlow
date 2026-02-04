@@ -94,12 +94,17 @@ export const getSpaces = async (userId: string) => {
   return spacesWithMembers;
 };
 
-export const createSpace = async (name: string, userId: string) => {
+export const createSpace = async (name: string, userId: string, description?: string) => {
   const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
   const { data: spaceData, error: spaceError } = await supabase
     .from('spaces')
-    .insert({ name, join_code: joinCode, owner_id: userId })
+    .insert({ 
+      name, 
+      description: description || null,
+      join_code: joinCode, 
+      owner_id: userId 
+    })
     .select()
     .single();
 
@@ -221,4 +226,74 @@ export const getAllEmployees = async () => {
 export const deleteTask = async (taskId: number) => {
     const { error } = await supabase.from('tasks').delete().eq('id', taskId);
     if (error) throw error;
+};
+
+export const getSpaceById = async (spaceId: string) => {
+    const { data, error } = await supabase
+        .from('spaces')
+        .select('*')
+        .eq('id', spaceId)
+        .single();
+    
+    if (error) throw error;
+    
+    // Get members
+    const { data: membersData, error: membersError } = await supabase
+        .from('space_members')
+        .select('user_id')
+        .eq('space_id', spaceId);
+    
+    if (membersError) throw membersError;
+    
+    const members = membersData.map(m => m.user_id);
+    return { ...mapDbSpaceToApp(data), members };
+};
+
+export const addMemberToSpace = async (spaceId: string, userId: string) => {
+    const { error } = await supabase
+        .from('space_members')
+        .insert({ space_id: spaceId, user_id: userId });
+    
+    if (error) {
+        if (error.code === '23505') { // Unique constraint violation
+            throw new Error('User is already a member of this workspace');
+        }
+        throw error;
+    }
+};
+
+export const removeMemberFromSpace = async (spaceId: string, userId: string) => {
+    const { error } = await supabase
+        .from('space_members')
+        .delete()
+        .eq('space_id', spaceId)
+        .eq('user_id', userId);
+    
+    if (error) throw error;
+};
+
+export const deleteSpace = async (spaceId: string) => {
+    // First delete all tasks in the space (cascade will handle subtasks, comments, time logs)
+    const { error: tasksError } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('space_id', spaceId);
+    
+    if (tasksError) throw tasksError;
+    
+    // Delete space members
+    const { error: membersError } = await supabase
+        .from('space_members')
+        .delete()
+        .eq('space_id', spaceId);
+    
+    if (membersError) throw membersError;
+    
+    // Delete the space itself
+    const { error: spaceError } = await supabase
+        .from('spaces')
+        .delete()
+        .eq('id', spaceId);
+    
+    if (spaceError) throw spaceError;
 };

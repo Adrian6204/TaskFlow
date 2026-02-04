@@ -13,6 +13,7 @@ import { GanttIcon } from './icons/GanttIcon';
 import { ListBulletIcon } from './icons/ListBulletIcon';
 import { ViewColumnsIcon } from './icons/ViewColumnsIcon';
 import { CalendarIcon } from './icons/CalendarIcon';
+import { Cog6ToothIcon } from './icons/Cog6ToothIcon';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -57,7 +58,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   const mainNavItems = [
     { id: 'home', label: 'Home', icon: HomeIcon },
     { id: 'overview', label: 'Overview', icon: ChartBarIcon },
-    { id: 'members', label: 'Members', icon: UsersIcon },
     { id: 'whiteboard', label: 'Task of Today', icon: PencilSquareIcon },
   ];
 
@@ -66,12 +66,13 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'board', label: 'Board', icon: ViewColumnsIcon },
     { id: 'gantt', label: 'Gantt', icon: GanttIcon },
     { id: 'calendar', label: 'Calendar', icon: CalendarIcon },
+    { id: 'settings', label: 'Settings', icon: Cog6ToothIcon },
   ];
 
   const handleSpaceClick = (spaceId: string) => {
     if (expandedSpaceId === spaceId) {
-      // Already expanded, just select it
-      onSelectSpace(spaceId);
+      // Already expanded, collapse it
+      setExpandedSpaceId(null);
     } else {
       // Expand and select
       setExpandedSpaceId(spaceId);
@@ -85,7 +86,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     onViewChange(viewId);
   };
 
-  const isWorkspaceView = ['list', 'board', 'gantt', 'calendar'].includes(currentView);
+  const isWorkspaceView = ['list', 'board', 'gantt', 'calendar', 'settings'].includes(currentView);
 
   return (
     <aside 

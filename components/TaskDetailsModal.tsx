@@ -381,41 +381,53 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
           </div>
           
           {/* Time Tracking Section */}
-          <div className="mb-6 bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-2">
-                    <ClockIcon className={`w-5 h-5 ${task.timerStartTime ? 'text-primary-600 dark:text-primary-400 animate-pulse' : 'text-slate-400'}`} />
-                    <h3 className="font-semibold text-slate-700 dark:text-slate-300">Time Tracking</h3>
-                </div>
-                <span className="text-sm font-mono font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 px-3 py-1 rounded border border-slate-200 dark:border-slate-700">
-                    {totalTimeDisplay}
-                </span>
+          <div className="mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-6">
+              <div className="flex items-center gap-2 mb-4">
+                  <ClockIcon className={`w-6 h-6 ${task.timerStartTime ? 'text-blue-600 dark:text-blue-400 animate-pulse' : 'text-slate-400'}`} />
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Time Tracking</h3>
               </div>
               
-              <div className="flex items-center gap-4 mb-4">
+              {/* Big Timer Display */}
+              <div className="text-center mb-6">
+                  <div className={`text-6xl font-bold font-mono ${
+                      task.timerStartTime 
+                          ? 'text-blue-600 dark:text-blue-400' 
+                          : 'text-slate-700 dark:text-slate-300'
+                  }`}>
+                      {task.timerStartTime ? formatDuration(elapsedTime) : '0h 0m 0s'}
+                  </div>
+                  {task.timerStartTime && (
+                      <p className="text-sm text-blue-600 dark:text-blue-400 mt-2 animate-pulse font-medium">
+                          ⏱️ Timer Running...
+                      </p>
+                  )}
+                  {!task.timerStartTime && totalLoggedTime > 0 && (
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+                          Total logged: {totalTimeDisplay}
+                      </p>
+                  )}
+              </div>
+              
+              {/* Start/Stop Button */}
+              <div className="flex justify-center">
                   <button
                     onClick={() => onToggleTimer(task.id)}
-                    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium transition-colors w-full sm:w-auto ${
+                    className={`flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg ${
                         task.timerStartTime 
-                            ? 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50' 
-                            : 'bg-primary-600 text-white hover:bg-primary-700'
+                            ? 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-red-500/50' 
+                            : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/50'
                     }`}
                   >
                       {task.timerStartTime ? (
                           <>
-                            <StopIcon className="w-5 h-5" /> Stop Timer
+                            <StopIcon className="w-6 h-6" /> Stop Timer
                           </>
                       ) : (
                           <>
-                            <PlayIcon className="w-5 h-5" /> Start Timer
+                            <PlayIcon className="w-6 h-6" /> Start Timer
                           </>
                       )}
                   </button>
-                  {task.timerStartTime && (
-                      <span className="text-sm text-slate-500 dark:text-slate-400 animate-pulse">
-                          Tracking time...
-                      </span>
-                  )}
               </div>
               
               {task.timeLogs && task.timeLogs.length > 0 && (
