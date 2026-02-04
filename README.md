@@ -1,3 +1,4 @@
+
 # TaskFlow
 
 TaskFlow is a modern, responsive web application for tracking and managing daily employee tasks. It features a Kanban-style board, task creation/editing, real-time time tracking, and an AI-powered suite of tools using the Google Gemini API to optimize your workflow.
@@ -10,7 +11,7 @@ TaskFlow is a modern, responsive web application for tracking and managing daily
 - **Subtasks & Checklists**: Break complex tasks into actionable steps. Use AI to automatically generate checklist items based on the task description.
 - **Smart Tagging**: Organize tasks with custom, color-coded tags. Includes an intelligent autocomplete system for quick tagging.
 - **Task Dependencies**: Create "blocking" relationships between tasks to ensure work is completed in the correct order.
-- **Data Persistence**: All tasks, logs, and settings are automatically saved to your browser's local storage, ensuring your data survives page reloads.
+- **Real-time Database**: Powered by Supabase for instant updates and team collaboration.
 
 ### 🤖 AI Integration (Powered by Gemini)
 - **Goal-to-Task Generation**: Describe a high-level objective, and Gemini will generate a complete list of assigned tasks to achieve it.
@@ -25,33 +26,27 @@ TaskFlow is a modern, responsive web application for tracking and managing daily
 - **Drag & Drop**: Intuitively move tasks between columns to update status.
 - **Advanced Filtering**: Quickly find tasks by searching titles/tags or filtering by assignee and priority.
 
-### 🛡️ Admin & Security
-- **Role-Based Access**: Distinct 'Admin' and 'User' roles. Admins have exclusive access to dashboards and deletion capabilities.
-- **Admin Dashboard**: Visual analytics including:
-    - Task Status Distribution (Pie Chart)
-    - Team Workload (Bar Chart)
-    - Real-time Activity Feed
-- **Safety Confirmations**: Confirmation modals prevent accidental deletion of important data.
-
-## 🚀 Tech Stack
-
-- **Frontend**: React 19, TypeScript
-- **Styling**: Tailwind CSS
-- **AI Integration**: Google GenAI SDK (`@google/genai`)
-- **State Management**: React Context API + LocalStorage
-- **Icons**: Custom SVG Icons
-
 ## 🏁 Getting Started
 
-This application is designed to run in a web-based development environment where the `API_KEY` for the Gemini API is provided as an environment variable.
+### 1. Database Setup (Supabase)
+This project requires a Supabase database.
+1. Create a new project at [Supabase.com](https://supabase.com).
+2. Go to the **SQL Editor** in your Supabase dashboard.
+3. Open the file `supabase_schema.sql` located in the root of this repository.
+4. Copy the entire content and paste it into the Supabase SQL Editor.
+5. Click **Run** to create the tables and security policies.
 
-### Prerequisites
+### 2. Environment Variables
+Create a `.env` file locally or set up environment variables in Vercel:
+- `SUPABASE_URL`: Your Supabase Project URL.
+- `SUPABASE_ANON_KEY`: Your Supabase Public API Key.
+- `API_KEY`: Your Google Gemini API Key.
 
-- A valid Google Gemini API Key must be configured in the environment as `process.env.API_KEY`.
-
-### Running the Application
-
-Simply open the `index.html` file in a compatible browser or development environment. The application will mount and be ready to use.
+### 3. Running Locally
+```bash
+npm install
+npm run dev
+```
 
 ## 📂 Project Structure
 
@@ -60,24 +55,13 @@ Simply open the `index.html` file in a compatible browser or development environ
 ├── public/
 ├── src/
 │   ├── auth/
-│   │   └── AuthContext.tsx
 │   ├── components/
-│   │   ├── charts/               # Visualization components
-│   │   ├── icons/                # SVG Icon library
-│   │   ├── hooks/                # Custom React hooks
-│   │   ├── AdminDashboard.tsx    # Analytics view
-│   │   ├── AddTaskModal.tsx      # Task creation/editing
-│   │   ├── TaskDetailsModal.tsx  # Extended details, subtasks, timer
-│   │   ├── TaskBoard.tsx         # Kanban column layout
-│   │   ├── CalendarView.tsx      # Monthly view
-│   │   ├── LoginPage.tsx         # Authentication screen
-│   │   └── ... (other components)
-│   ├── context/
 │   ├── services/
 │   │   └── geminiService.ts      # AI integration logic
+│   │   └── supabaseService.ts    # Database logic
 │   ├── App.tsx                   # Main application logic
-│   ├── constants.ts              # Mock data & configs
 │   └── types.ts                  # TypeScript definitions
+├── supabase_schema.sql           # Database setup script
 ├── index.html
 └── metadata.json
 ```
