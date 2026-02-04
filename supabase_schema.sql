@@ -2,7 +2,13 @@
 -- Enable UUID extension for unique IDs
 create extension if not exists "uuid-ossp";
 
--- 1. HELPER: Check membership safely (Bypasses RLS)
+-- 1. CLEANUP: Drop old/conflicting functions
+-- This ensures the app fails loudly if it tries to use the wrong function, 
+-- rather than failing silently with a logic error.
+DROP FUNCTION IF EXISTS public.join_space(text);
+DROP FUNCTION IF EXISTS public.join_space_by_code(text);
+
+-- 2. HELPER: Check membership safely (Bypasses RLS)
 create or replace function public.is_space_member(_space_id uuid)
 returns boolean language plpgsql security definer as $$
 begin
@@ -15,21 +21,25 @@ begin
 end;
 $$;
 
--- 2. HELPER: Secure Join Function V2
--- Renamed to avoid conflicts with previous versions
+-- 3. HELPER: Secure Join Function V2
 create or replace function public.join_space_v2(input_code text)
 returns json language plpgsql security definer as $$
 declare
   _space_id uuid;
   _space_data record;
+  _clean_code text;
 begin
-  -- Search for the space ID using exact case-insensitive match
+  -- Normalize input: Uppercase and trimmed
+  _clean_code := upper(trim(input_code));
+
+  -- Search for the space ID
   select id into _space_id 
   from public.spaces 
-  where upper(join_code) = upper(trim(input_code));
+  where upper(join_code) = _clean_code;
   
   if _space_id is null then
-    raise exception 'Space with this join code not found.';
+    -- Specific error message to help debugging
+    raise exception 'Space with code % not found', _clean_code;
   end if;
 
   -- Check if user is already a member

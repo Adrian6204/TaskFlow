@@ -115,10 +115,18 @@ export const createSpace = async (name: string, userId: string) => {
 };
 
 export const joinSpace = async (code: string, userId: string) => {
-  // Use the new v2 function to ensures no caching/parameter conflicts
-  const { data, error } = await supabase.rpc('join_space_v2', { input_code: code });
+  // Pre-process code: remove spaces, convert to uppercase
+  const cleanCode = code.trim().replace(/\s/g, '').toUpperCase();
+  console.log('Attempting to join space with clean code:', cleanCode);
 
-  if (error) throw error;
+  // Use the new v2 function
+  const { data, error } = await supabase.rpc('join_space_v2', { input_code: cleanCode });
+
+  if (error) {
+    console.error('Join space error:', error);
+    throw error;
+  }
+  
   if (!data) throw new Error('Space not found');
 
   // The RPC returns the raw space data, map it to our app type
