@@ -3,8 +3,7 @@
 create extension if not exists "uuid-ossp";
 
 -- 1. CLEANUP: Drop old/conflicting functions
--- This ensures the app fails loudly if it tries to use the wrong function, 
--- rather than failing silently with a logic error.
+-- Run this to remove the "query you added yesterday" if it was named join_space or join_space_by_code
 DROP FUNCTION IF EXISTS public.join_space(text);
 DROP FUNCTION IF EXISTS public.join_space_by_code(text);
 
@@ -22,6 +21,7 @@ end;
 $$;
 
 -- 3. HELPER: Secure Join Function V2
+-- This is the "New Query" your app is trying to use.
 create or replace function public.join_space_v2(input_code text)
 returns json language plpgsql security definer as $$
 declare

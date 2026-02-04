@@ -115,24 +115,29 @@ export const createSpace = async (name: string, userId: string) => {
 };
 
 export const joinSpace = async (code: string, userId: string) => {
-  // Pre-process code: remove spaces, convert to uppercase
+  // 1. Clean the input (remove whitespace, uppercase)
   const cleanCode = code.trim().replace(/\s/g, '').toUpperCase();
   console.log('Attempting to join space with clean code:', cleanCode);
 
-  // Use the new v2 function
+  // 2. Call the RPC function `join_space_v2`. 
+  // This function is SECURITY DEFINER, allowing it to bypass RLS to find the space.
   const { data, error } = await supabase.rpc('join_space_v2', { input_code: cleanCode });
 
   if (error) {
-    console.error('Join space error:', error);
-    throw error;
+    console.error('Supabase RPC Error join_space_v2:', error);
+    // Return a clear error message from the DB exception if available
+    throw new Error(error.message || 'Failed to join space. Please check the code.');
   }
   
-  if (!data) throw new Error('Space not found');
+  if (!data) {
+      console.error('No data returned from join_space_v2');
+      throw new Error('Space not found');
+  }
 
-  // The RPC returns the raw space data, map it to our app type
+  // 3. Return the mapped space data
   return { 
       ...mapDbSpaceToApp(data), 
-      members: [userId] // Optimistically add current user, actual members load later
+      members: [userId] 
   };
 };
 
