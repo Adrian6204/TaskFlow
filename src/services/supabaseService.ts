@@ -116,8 +116,8 @@ export const createSpace = async (name: string, userId: string) => {
 
 export const joinSpace = async (code: string, userId: string) => {
   // Use the secure RPC function to join by code
-  // This bypasses RLS visibility issues by running on the server side
-  const { data, error } = await supabase.rpc('join_space_by_code', { _join_code: code });
+  // We use `input_code` as the parameter name to match the updated SQL function signature exactly
+  const { data, error } = await supabase.rpc('join_space_by_code', { input_code: code });
 
   if (error) throw error;
   if (!data) throw new Error('Space not found');

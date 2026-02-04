@@ -16,29 +16,35 @@ end;
 $$;
 
 -- HELPER FUNCTION: Join a space by code safely
-create or replace function public.join_space_by_code(_join_code text)
+-- 1. Drop old signature to ensure clean slate
+drop function if exists public.join_space_by_code(text);
+
+-- 2. Create new robust function
+create or replace function public.join_space_by_code(input_code text)
 returns json language plpgsql security definer as $$
 declare
   _space_id uuid;
   _space_data record;
 begin
-  -- 1. Find the space ID
-  select id into _space_id from public.spaces where join_code = _join_code;
+  -- Find the space ID (Case insensitive, trimmed)
+  select id into _space_id 
+  from public.spaces 
+  where upper(join_code) = upper(trim(input_code));
   
   if _space_id is null then
     raise exception 'Invalid join code';
   end if;
 
-  -- 2. Check if already a member
+  -- Check if already a member
   if exists (select 1 from public.space_members where space_id = _space_id and user_id = auth.uid()) then
     raise exception 'You are already a member of this space';
   end if;
 
-  -- 3. Insert new member
+  -- Insert new member
   insert into public.space_members (space_id, user_id, role)
   values (_space_id, auth.uid(), 'member');
 
-  -- 4. Return space details
+  -- Return space details
   select * from public.spaces where id = _space_id into _space_data;
   return row_to_json(_space_data);
 end;
@@ -121,7 +127,6 @@ drop policy if exists "Enable insert for authenticated users" on public.space_me
 create policy "Enable insert for authenticated users" on public.space_members
   for insert to authenticated with check (auth.uid() = user_id);
 
--- FIXED: This policy now uses the function to avoid recursion
 drop policy if exists "Enable read for members of the space" on public.space_members;
 create policy "Enable read for members of the space" on public.space_members
   for select to authenticated using (
