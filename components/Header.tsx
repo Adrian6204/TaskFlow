@@ -30,23 +30,23 @@ const Header: React.FC<HeaderProps> = ({
   user
 }) => {
   return (
-    <header className="h-16 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-slate-900/50 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-40 transition-colors duration-300">
+    <header className="h-16 border-b border-neutral-200/50 dark:border-neutral-800/50 bg-neutral-50/80 dark:bg-neutral-900/80 backdrop-blur-2xl flex items-center justify-between px-6 sticky top-0 z-40 transition-all duration-500">
       
       {/* Left: Breadcrumbs & Views */}
       <div className="flex items-center gap-6">
-        <div className="flex items-center text-sm font-medium text-slate-400">
-           <span className="text-slate-500">Spaces</span>
-           <span className="mx-2 text-slate-400 dark:text-slate-600">/</span>
-           <span className="text-slate-900 dark:text-white font-bold">{activeSpace}</span>
+        <div className="flex items-center text-sm font-medium">
+           <span className="text-neutral-400 dark:text-neutral-500">Spaces</span>
+           <span className="mx-2 text-neutral-300 dark:text-neutral-700">/</span>
+           <span className="text-neutral-900 dark:text-white font-semibold">{activeSpace}</span>
         </div>
 
-        <div className="h-6 w-px bg-slate-200 dark:bg-white/10 mx-2 hidden md:block"></div>
+        <div className="h-5 w-px bg-neutral-200 dark:bg-neutral-800 mx-2 hidden md:block"></div>
 
-        <nav className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-lg">
+        <nav className="flex items-center gap-1 bg-neutral-100/80 dark:bg-neutral-800/50 p-1 rounded-xl backdrop-blur-sm">
            {user.role === 'admin' && (
              <button
                 onClick={() => onViewChange('dashboard')}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all ${currentView === 'dashboard' ? 'bg-white dark:bg-primary-500 text-primary-600 dark:text-white shadow-sm dark:shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/5'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-300 ${currentView === 'dashboard' ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-lg' : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-neutral-700/50'}`}
             >
                 <div className="w-4 h-4"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg></div>
                 <span className="hidden sm:inline">Overview</span>
@@ -55,21 +55,21 @@ const Header: React.FC<HeaderProps> = ({
 
             <button
                 onClick={() => onViewChange('list')}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all ${currentView === 'list' ? 'bg-white dark:bg-primary-500 text-primary-600 dark:text-white shadow-sm dark:shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/5'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-300 ${currentView === 'list' ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-lg' : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-neutral-700/50'}`}
             >
                 <ListBulletIcon className="w-4 h-4"/>
                 <span className="hidden sm:inline">List</span>
             </button>
             <button
                 onClick={() => onViewChange('board')}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all ${currentView === 'board' ? 'bg-white dark:bg-primary-500 text-primary-600 dark:text-white shadow-sm dark:shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/5'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-300 ${currentView === 'board' ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-lg' : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-neutral-700/50'}`}
             >
                 <ViewColumnsIcon className="w-4 h-4"/>
                 <span className="hidden sm:inline">Board</span>
             </button>
             <button
                 onClick={() => onViewChange('calendar')}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all ${currentView === 'calendar' ? 'bg-white dark:bg-primary-500 text-primary-600 dark:text-white shadow-sm dark:shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/5'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-300 ${currentView === 'calendar' ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-lg' : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-neutral-700/50'}`}
             >
                 <CalendarIcon className="w-4 h-4"/>
                 <span className="hidden sm:inline">Calendar</span>
@@ -81,20 +81,20 @@ const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center gap-3">
         {/* Search */}
         <div className="relative group hidden md:block">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500 group-focus-within:text-primary-500 dark:group-focus-within:text-primary-400" />
+            <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 dark:text-neutral-500 transition-colors group-focus-within:text-neutral-900 dark:group-focus-within:text-white" />
             <input 
                 type="text"
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-lg py-1.5 pl-9 pr-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500 w-48 transition-all"
+                className="bg-neutral-100/80 dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-neutral-700/50 rounded-xl py-2 pl-10 pr-4 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 dark:focus:ring-white/10 w-52 transition-all duration-300"
             />
         </div>
 
         {/* AI Action */}
         <button
           onClick={onGenerateTasks}
-          className="p-2 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/20 rounded-lg transition-all"
+          className="p-2.5 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-all duration-300"
           title="AI Generate Tasks"
         >
           <SparklesIcon className="w-5 h-5" />
@@ -103,10 +103,10 @@ const Header: React.FC<HeaderProps> = ({
         {/* Add Task */}
         <button
           onClick={onAddTask}
-          className="flex items-center gap-2 bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold py-2 px-4 rounded-lg shadow-lg shadow-primary-600/20 transition-all active:scale-95"
+          className="flex items-center gap-2 bg-neutral-900 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-900 text-sm font-semibold py-2.5 px-5 rounded-xl shadow-lg shadow-neutral-900/20 dark:shadow-white/10 transition-all duration-300 active:scale-95"
         >
           <PlusIcon className="w-4 h-4" />
-          <span className="hidden sm:inline uppercase tracking-wider">New Task</span>
+          <span className="hidden sm:inline">New Task</span>
         </button>
       </div>
     </header>

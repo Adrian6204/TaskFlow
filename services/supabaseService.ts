@@ -115,30 +115,27 @@ export const createSpace = async (name: string, userId: string) => {
 };
 
 export const joinSpace = async (code: string, userId: string) => {
-  const { data: spaceData, error: spaceError } = await supabase
-    .from('spaces')
-    .select()
-    .eq('join_code', code)
-    .single();
+  // Normalize the code: uppercase and remove any spaces/hyphens
+  const normalizedCode = code.toUpperCase().replace(/[\s-]/g, '').trim();
+  
+  // Use the RPC function which bypasses RLS to find and join the space
+  const { data, error } = await supabase.rpc('join_space_v2', { 
+    input_code: normalizedCode 
+  });
 
-  if (spaceError) throw new Error('Invalid join code');
+  if (error) {
+    // Handle specific error messages
+    if (error.message.includes('not found')) {
+      throw new Error('Invalid join code. Please check the code and try again.');
+    }
+    throw new Error(error.message);
+  }
 
-  const { data: memberCheck } = await supabase
-    .from('space_members')
-    .select()
-    .eq('space_id', spaceData.id)
-    .eq('user_id', userId)
-    .single();
+  if (!data) {
+    throw new Error('Invalid join code. Please check the code and try again.');
+  }
 
-  if (memberCheck) throw new Error('Already a member of this space');
-
-  const { error: joinError } = await supabase
-    .from('space_members')
-    .insert({ space_id: spaceData.id, user_id: userId });
-
-  if (joinError) throw joinError;
-
-  return mapDbSpaceToApp(spaceData);
+  return mapDbSpaceToApp(data);
 };
 
 export const getTasks = async (spaceId: string) => {

@@ -39,7 +39,7 @@ const JoinSpaceModal: React.FC<JoinSpaceModalProps> = ({ isOpen, onClose, onJoin
       />
       <div className={`bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6 relative z-10 transition-all duration-300 transform ${show ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
         <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Join a Space</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Enter the 6-character Join Code provided by the space administrator.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Enter the Join Code provided by the space administrator (found in Space Settings).</p>
         
         <form onSubmit={handleSubmit}>
           <div className="mb-6">
@@ -48,8 +48,8 @@ const JoinSpaceModal: React.FC<JoinSpaceModalProps> = ({ isOpen, onClose, onJoin
               type="text"
               autoFocus
               value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase().replace(/\s/g, ''))}
-              placeholder="e.g. HQ-2024"
+              onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[\s-]/g, ''))}
+              placeholder="e.g. ABC123"
               className="w-full px-4 py-3 text-center text-2xl font-mono tracking-widest uppercase border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
             />
           </div>

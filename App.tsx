@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Task, TaskStatus, Employee, Priority, Comment, ActivityLog, TimeLogEntry, Space } from './types';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -18,48 +19,73 @@ import ProfileModal from './components/ProfileModal';
 import CreateSpaceModal from './components/CreateSpaceModal';
 import JoinSpaceModal from './components/JoinSpaceModal';
 import SpaceSettingsModal from './components/SpaceSettingsModal';
+import GanttChart from './components/GanttChart';
+import Whiteboard from './components/Whiteboard';
+import MembersView from './components/MembersView';
+import HomeView from './components/HomeView';
 import { Cog6ToothIcon } from './components/icons/Cog6ToothIcon';
 import * as dataService from './services/supabaseService';
 import { isSupabaseConfigured } from './lib/supabaseClient';
 
-const App: React.FC = () => {
-  // Check configuration first
-  if (!isSupabaseConfigured) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
-        <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-xl shadow-xl p-8 border border-slate-200 dark:border-slate-700">
-          <div className="flex items-center gap-4 mb-6">
-             <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-             </div>
-             <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Setup Required</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Database connection missing.</p>
-             </div>
-          </div>
-          
-          <div className="space-y-4">
-              <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
-                  <p className="text-sm text-slate-600 dark:text-slate-300 mb-2 font-medium">
-                      To connect the database, add these variables to Vercel:
-                  </p>
-                  <div className="font-mono text-xs text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 p-3 rounded border border-slate-200 dark:border-slate-700">
-                    SUPABASE_URL<br/>
-                    SUPABASE_ANON_KEY
-                  </div>
+// Setup Required Screen Component
+const SetupRequiredScreen: React.FC = () => (
+  <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
+    <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-xl shadow-xl p-8 border border-slate-200 dark:border-slate-700">
+      <div className="flex items-center gap-4 mb-6">
+         <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+            <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+         </div>
+         <div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Setup Required</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Database connection missing.</p>
+         </div>
+      </div>
+      
+      <div className="space-y-4">
+          <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
+              <p className="text-sm text-slate-600 dark:text-slate-300 mb-2 font-medium">
+                  To connect the database, add these variables to Vercel:
+              </p>
+              <div className="font-mono text-xs text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 p-3 rounded border border-slate-200 dark:border-slate-700">
+                SUPABASE_URL<br/>
+                SUPABASE_ANON_KEY
               </div>
+          </div>
 
-              <div className="text-xs text-center text-slate-400 dark:text-slate-500 mt-4">
-                  After adding the variables, redeploy the project.
-              </div>
+          <div className="text-xs text-center text-slate-400 dark:text-slate-500 mt-4">
+              After adding the variables, redeploy the project.
           </div>
-        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// Protected Route Component
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
 
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// Main Dashboard Component (Protected)
+const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user, updateUser, logout } = useAuth();
   const { showNotification } = useNotification();
   
@@ -71,9 +97,28 @@ const App: React.FC = () => {
 
   // UI State
   const [isSidebarOpen, setSidebarOpen] = useState(true);
-  const [currentView, setCurrentView] = useState<'list' | 'board' | 'calendar' | 'dashboard'>('list');
   const [activeSpaceId, setActiveSpaceId] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Derive current view from URL path
+  const getCurrentViewFromPath = (): string => {
+    const path = location.pathname;
+    if (path.includes('/board')) return 'board';
+    if (path.includes('/calendar')) return 'calendar';
+    if (path.includes('/dashboard')) return 'dashboard';
+    if (path.includes('/gantt')) return 'gantt';
+    if (path.includes('/whiteboard')) return 'whiteboard';
+    if (path.includes('/members')) return 'members';
+    if (path.includes('/overview')) return 'overview';
+    if (path.includes('/home')) return 'home';
+    return 'home';
+  };
+  
+  const currentView = getCurrentViewFromPath();
+
+  const setCurrentView = (view: string) => {
+    navigate(`/app/${view}`);
+  };
   
   // Modals
   const [isAddTaskModalOpen, setAddTaskModalOpen] = useState(false);
@@ -300,7 +345,7 @@ const App: React.FC = () => {
     setTasks(tasks.map(t => t.id === id ? updated : t));
   };
 
-  if (!user) return <LoginPage />;
+  if (!user) return null;
 
   return (
     <div className="flex h-screen overflow-hidden text-slate-900 dark:text-slate-100 transition-colors duration-300">
@@ -309,10 +354,14 @@ const App: React.FC = () => {
         isOpen={isSidebarOpen} 
         activeSpaceId={activeSpaceId}
         spaces={spaces}
+        currentView={currentView}
         onSelectSpace={(id) => {
           setActiveSpaceId(id);
-          if (currentView === 'dashboard') setCurrentView('list');
+          if (['home', 'overview', 'members', 'whiteboard'].includes(currentView)) {
+            // Stay on same view when switching spaces
+          }
         }}
+        onViewChange={setCurrentView}
         onToggle={() => setSidebarOpen(!isSidebarOpen)}
         onOpenProfile={() => setProfileModalOpen(true)}
         onLogout={logout}
@@ -352,22 +401,64 @@ const App: React.FC = () => {
                 </div>
             )}
 
-            {!activeSpaceId ? (
+            {/* Home View - Always accessible */}
+            {currentView === 'home' && (
+                <HomeView 
+                    tasks={filteredTasks}
+                    employees={spaceMembers}
+                    currentSpace={currentSpace}
+                    user={{ username: user.username, employeeId: user.employeeId }}
+                />
+            )}
+
+            {/* Overview/Dashboard View */}
+            {currentView === 'overview' && (
+                <AdminDashboard tasks={filteredTasks} employees={spaceMembers} activityLogs={activityLogs} />
+            )}
+
+            {/* Members View */}
+            {currentView === 'members' && (
+                <MembersView employees={spaceMembers} tasks={filteredTasks} />
+            )}
+
+            {/* Whiteboard - Daily Task (Standalone) */}
+            {currentView === 'whiteboard' && (
+                <div className="h-[calc(100vh-140px)]">
+                    <Whiteboard />
+                </div>
+            )}
+
+            {/* Space-specific views */}
+            {!activeSpaceId && !['home', 'overview', 'members', 'whiteboard'].includes(currentView) ? (
                 <div className="flex flex-col items-center justify-center h-[60vh] text-center p-8">
-                    <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                        <Cog6ToothIcon className="w-10 h-10 text-slate-400" />
+                    <div className="w-20 h-20 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mb-4">
+                        <Cog6ToothIcon className="w-10 h-10 text-neutral-400" />
                     </div>
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">No Space Selected</h2>
-                    <p className="text-slate-500 dark:text-slate-400 max-w-md mb-6">
+                    <h2 className="text-xl font-bold text-neutral-800 dark:text-white mb-2">No Space Selected</h2>
+                    <p className="text-neutral-500 dark:text-neutral-400 max-w-md mb-6">
                         Join an existing team space using a code, or create a new one to get started.
                     </p>
                     <div className="flex gap-4">
-                        <button onClick={() => setCreateSpaceModalOpen(true)} className="px-6 py-3 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 shadow-lg shadow-primary-500/20">Create Space</button>
-                        <button onClick={() => setJoinSpaceModalOpen(true)} className="px-6 py-3 bg-white dark:bg-slate-800 text-slate-700 dark:text-white font-bold rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700">Join Space</button>
+                        <button onClick={() => setCreateSpaceModalOpen(true)} className="px-6 py-3 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-semibold rounded-xl hover:bg-neutral-800 dark:hover:bg-neutral-100 shadow-lg transition-all duration-300">Create Space</button>
+                        <button onClick={() => setJoinSpaceModalOpen(true)} className="px-6 py-3 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-white font-semibold rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-all duration-300">Join Space</button>
                     </div>
                 </div>
-            ) : (
+            ) : activeSpaceId && (
                 <>
+                    {/* Context Header for Space */}
+                    {['list', 'board', 'gantt', 'calendar', 'dashboard'].includes(currentView) && (
+                        <div className="flex justify-between items-center mb-6">
+                            <h1 className="text-2xl font-bold text-neutral-800 dark:text-white">{currentSpace?.name}</h1>
+                            <button 
+                                onClick={() => setSpaceSettingsModalOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all duration-300"
+                            >
+                                <Cog6ToothIcon className="w-4 h-4" />
+                                Settings
+                            </button>
+                        </div>
+                    )}
+
                     {/* View Switching */}
                     {currentView === 'dashboard' && (
                         <AdminDashboard tasks={filteredTasks} employees={spaceMembers} activityLogs={activityLogs} />
@@ -387,13 +478,21 @@ const App: React.FC = () => {
                     {currentView === 'board' && (
                         <TaskBoard
                             tasks={filteredTasks}
-                            allTasks={tasks} // Pass all to check dependencies even outside filter
+                            allTasks={tasks}
                             employees={spaceMembers}
                             onEditTask={handleOpenAddTaskModal}
-                            onDeleteTask={(id) => { setTaskToDeleteId(id); setDeleteModalOpen(true); }} // Allow deletion in space
+                            onDeleteTask={(id) => { setTaskToDeleteId(id); setDeleteModalOpen(true); }}
                             onUpdateTaskStatus={handleUpdateTaskStatus}
                             onViewTask={(task) => { setSelectedTask(task); setTaskDetailsModalOpen(true); }}
                             onToggleTimer={handleToggleTimer}
+                        />
+                    )}
+
+                    {currentView === 'gantt' && (
+                        <GanttChart 
+                            tasks={filteredTasks}
+                            employees={spaceMembers}
+                            onViewTask={(task) => { setSelectedTask(task); setTaskDetailsModalOpen(true); }}
                         />
                     )}
 
@@ -520,6 +619,38 @@ const App: React.FC = () => {
           />
       )}
     </div>
+  );
+};
+
+// Main App Component with Routes
+const App: React.FC = () => {
+  // Check configuration first
+  if (!isSupabaseConfigured) {
+    return <SetupRequiredScreen />;
+  }
+
+  return (
+    <Routes>
+      {/* Auth Routes */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<LoginPage />} />
+      
+      {/* Protected App Routes */}
+      <Route path="/app" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/app/:view" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      
+      {/* Default redirect */}
+      <Route path="/" element={<Navigate to="/app/home" replace />} />
+      <Route path="*" element={<Navigate to="/app/home" replace />} />
+    </Routes>
   );
 };
 

@@ -1,10 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import { UserIcon } from './icons/UserIcon';
 import { LockClosedIcon } from './icons/LockClosedIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
+import { EyeIcon } from './icons/EyeIcon';
+import { EyeSlashIcon } from './icons/EyeSlashIcon';
 import { ClockIcon } from './icons/ClockIcon';
 import { ViewColumnsIcon } from './icons/ViewColumnsIcon';
 
@@ -30,7 +33,12 @@ const HERO_SLIDES = [
 ];
 
 const LoginPage: React.FC = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Determine if we're on signup page based on URL
+  const isSignupRoute = location.pathname === '/signup';
+  const [isLogin, setIsLogin] = useState(!isSignupRoute);
   const [activeSlide, setActiveSlide] = useState(0);
   
   const [email, setEmail] = useState('');
@@ -40,9 +48,16 @@ const LoginPage: React.FC = () => {
 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
-  const { login, signup } = useAuth();
+  const { user, loading, login, signup } = useAuth();
   const { showNotification } = useNotification();
+
+  // Sync isLogin state with URL
+  useEffect(() => {
+    setIsLogin(!isSignupRoute);
+  }, [isSignupRoute]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -50,6 +65,12 @@ const LoginPage: React.FC = () => {
     }, 6000);
     return () => clearInterval(timer);
   }, []);
+
+  // Redirect if already logged in
+  if (!loading && user) {
+    const from = (location.state as any)?.from?.pathname || '/app/list';
+    return <Navigate to={from} replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,11 +85,14 @@ const LoginPage: React.FC = () => {
     try {
       if (isLogin) {
         await login(email, password);
+        // Navigate to app after successful login
+        const from = (location.state as any)?.from?.pathname || '/app/list';
+        navigate(from, { replace: true });
       } else {
         await signup(email, password, fullName);
         // If successful and no error thrown:
         showNotification("Account created! Please sign in (check email if confirmation is enabled).", "success");
-        setIsLogin(true); // Switch to login mode
+        navigate('/login'); // Navigate to login page
         setPassword('');
         setConfirmPassword('');
       }
@@ -79,84 +103,95 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  const toggleAuthMode = () => {
+    setError(null);
+    if (isLogin) {
+      navigate('/signup');
+    } else {
+      navigate('/login');
+    }
+  };
+
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4">
-      <div className="relative z-10 w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <div className="relative z-10 w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         
         {/* Left Side: Brand & Carousel */}
-        <div className="hidden lg:flex flex-col justify-center space-y-10 p-8">
-          <div className="flex items-center gap-3 text-slate-800 dark:text-white">
-            <div className="p-2 bg-primary-600 rounded-lg shadow-lg shadow-primary-500/30">
-              <SparklesIcon className="w-8 h-8 text-white" />
+        <div className="hidden lg:flex flex-col justify-center space-y-12 p-8 animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-neutral-900 dark:bg-white rounded-2xl shadow-xl">
+              <SparklesIcon className="w-7 h-7 text-white dark:text-neutral-900" />
             </div>
-            <span className="text-3xl font-black tracking-tighter uppercase">TaskFlow</span>
+            <span className="text-2xl font-semibold text-neutral-900 dark:text-white tracking-tight">TaskFlow</span>
           </div>
 
-          <div className="relative h-[280px]">
+          <div className="relative h-[300px]">
             {HERO_SLIDES.map((slide, idx) => (
               <div 
                 key={idx}
-                className={`absolute inset-0 transition-all duration-1000 transform ${
+                className={`absolute inset-0 transition-all duration-700 ease-out transform ${
                   activeSlide === idx 
                     ? 'opacity-100 translate-y-0 scale-100' 
-                    : 'opacity-0 translate-y-4 scale-95 pointer-events-none'
+                    : 'opacity-0 translate-y-8 scale-98 pointer-events-none'
                 }`}
               >
-                <div className={`${slide.accent} inline-flex p-4 rounded-2xl mb-6 backdrop-blur-md shadow-lg`}>
-                  {slide.icon}
+                <div className="inline-flex p-4 bg-neutral-100 dark:bg-neutral-800 rounded-2xl mb-8">
+                  <div className="text-neutral-900 dark:text-white">{slide.icon}</div>
                 </div>
-                <h2 className="text-5xl font-extrabold text-slate-900 dark:text-white mb-6 leading-tight tracking-tight">
+                <h2 className="text-5xl font-bold text-neutral-900 dark:text-white mb-6 leading-[1.1] tracking-tight">
                   {slide.title}
                 </h2>
-                <p className="text-slate-600 dark:text-primary-100/60 text-xl leading-relaxed max-w-md">
+                <p className="text-neutral-500 dark:text-neutral-400 text-xl leading-relaxed max-w-md">
                   {slide.content}
                 </p>
               </div>
             ))}
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             {HERO_SLIDES.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveSlide(idx)}
-                className={`h-1.5 rounded-full transition-all duration-500 ${
-                  activeSlide === idx ? 'w-16 bg-slate-800 dark:bg-white' : 'w-4 bg-slate-300 dark:bg-white/10 hover:bg-slate-400 dark:hover:bg-white/30'
+                className={`h-1 rounded-full transition-all duration-500 ease-out ${
+                  activeSlide === idx ? 'w-12 bg-neutral-900 dark:bg-white' : 'w-3 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600'
                 }`}
               />
             ))}
           </div>
         </div>
 
-        {/* Right Side: Glass Login Card */}
-        <div className="flex justify-center">
-          <div className="w-full max-w-md bg-white/70 dark:bg-white/[0.03] backdrop-blur-3xl rounded-[2.5rem] p-10 lg:p-12 border border-slate-100 dark:border-white/10 shadow-2xl dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)]">
-            <div className="lg:hidden flex items-center gap-2 text-slate-900 dark:text-white mb-10">
-               <SparklesIcon className="w-6 h-6 text-primary-500 dark:text-primary-400" />
-               <span className="text-xl font-black uppercase tracking-tighter">TaskFlow</span>
+        {/* Right Side: Clean Login Card */}
+        <div className="flex justify-center animate-fade-in-up">
+          <div className="w-full max-w-md bg-white/90 dark:bg-neutral-900/90 backdrop-blur-2xl rounded-3xl p-10 lg:p-12 border border-neutral-200/50 dark:border-neutral-800/50 shadow-2xl shadow-neutral-900/5 dark:shadow-black/20">
+            <div className="lg:hidden flex items-center gap-3 mb-10">
+               <div className="p-2 bg-neutral-900 dark:bg-white rounded-xl">
+                 <SparklesIcon className="w-5 h-5 text-white dark:text-neutral-900" />
+               </div>
+               <span className="text-lg font-semibold text-neutral-900 dark:text-white">TaskFlow</span>
             </div>
 
             <div className="mb-10">
-              <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-3">
-                {isLogin ? 'Welcome back' : 'Join TaskFlow'}
+              <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2 tracking-tight">
+                {isLogin ? 'Welcome back' : 'Create account'}
               </h1>
-              <p className="text-slate-500 dark:text-slate-400 text-lg">
-                {isLogin ? 'Sign in to your workspace.' : 'Create your free account today.'}
+              <p className="text-neutral-500 dark:text-neutral-400 text-base">
+                {isLogin ? 'Enter your credentials to continue.' : 'Start your journey with TaskFlow.'}
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {!isLogin && (
-                <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">Full Name</label>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 ml-1">Full Name</label>
                   <div className="relative group">
-                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors group-focus-within:text-primary-500 dark:group-focus-within:text-primary-400" />
+                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-500 transition-colors group-focus-within:text-neutral-900 dark:group-focus-within:text-white" />
                     <input
                       type="text"
                       required
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-white/[0.05] border border-slate-200 dark:border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all"
+                      className="w-full bg-neutral-100/80 dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-neutral-700/50 rounded-xl py-3.5 pl-12 pr-4 text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 dark:focus:ring-white/10 transition-all duration-300"
                       placeholder="Jane Doe"
                     />
                   </div>
@@ -164,51 +199,76 @@ const LoginPage: React.FC = () => {
               )}
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">Email Address</label>
+                <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 ml-1">Email</label>
                 <div className="relative group">
-                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors group-focus-within:text-primary-500 dark:group-focus-within:text-primary-400" />
+                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-500 transition-colors group-focus-within:text-neutral-900 dark:group-focus-within:text-white" />
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-white/[0.05] border border-slate-200 dark:border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all"
+                    className="w-full bg-neutral-100/80 dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-neutral-700/50 rounded-xl py-3.5 pl-12 pr-4 text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 dark:focus:ring-white/10 transition-all duration-300"
                     placeholder="name@company.com"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">Password</label>
+                <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 ml-1">Password</label>
                 <div className="relative group">
-                  <LockClosedIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors group-focus-within:text-primary-500 dark:group-focus-within:text-primary-400" />
+                  <LockClosedIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-500 transition-colors group-focus-within:text-neutral-900 dark:group-focus-within:text-white" />
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-white/[0.05] border border-slate-200 dark:border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all"
+                    className="w-full bg-neutral-100/80 dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-neutral-700/50 rounded-xl py-3.5 pl-12 pr-12 text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 dark:focus:ring-white/10 transition-all duration-300"
                     placeholder="••••••••"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors duration-200"
+                  >
+                    {showPassword ? (
+                      <EyeSlashIcon className="w-5 h-5" />
+                    ) : (
+                      <EyeIcon className="w-5 h-5" />
+                    )}
+                  </button>
                 </div>
               </div>
 
               {!isLogin && (
-                <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] ml-1">Confirm Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-white/[0.05] border border-slate-200 dark:border-white/10 rounded-2xl py-3.5 px-4 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all"
-                    placeholder="••••••••"
-                  />
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 ml-1">Confirm Password</label>
+                  <div className="relative group">
+                    <LockClosedIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-500 transition-colors group-focus-within:text-neutral-900 dark:group-focus-within:text-white" />
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full bg-neutral-100/80 dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-neutral-700/50 rounded-xl py-3.5 pl-12 pr-12 text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 dark:focus:ring-white/10 transition-all duration-300"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors duration-200"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeSlashIcon className="w-5 h-5" />
+                      ) : (
+                        <EyeIcon className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               )}
 
               {error && (
-                <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm font-medium animate-shake">
+                <div className="p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200/50 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm font-medium">
                   {error}
                 </div>
               )}
@@ -216,18 +276,18 @@ const LoginPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-4 px-6 bg-primary-600 hover:bg-primary-500 text-white font-black rounded-2xl shadow-xl shadow-primary-600/20 transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed mt-4 uppercase tracking-widest text-sm"
+                className="w-full py-4 px-6 bg-neutral-900 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-900 font-semibold rounded-xl shadow-lg shadow-neutral-900/20 dark:shadow-white/10 transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed mt-2"
               >
                 {isLoading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
               </button>
             </form>
 
-            <div className="mt-10 text-center">
+            <div className="mt-8 text-center">
               <button 
-                onClick={() => { setIsLogin(!isLogin); setError(null); }}
-                className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors text-sm font-semibold"
+                onClick={toggleAuthMode}
+                className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors duration-300 text-sm font-medium"
               >
-                {isLogin ? "New here? Create an account" : "Have an account? Sign in"}
+                {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
               </button>
             </div>
           </div>
@@ -235,8 +295,8 @@ const LoginPage: React.FC = () => {
       </div>
 
       {/* Footer Branding */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-slate-400 dark:text-slate-600 text-[10px] font-black tracking-[0.4em] uppercase opacity-60">
-        TaskFlow AI • Empowering Teams
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-neutral-400 dark:text-neutral-600 text-xs font-medium tracking-wide">
+        TaskFlow
       </div>
     </div>
   );
